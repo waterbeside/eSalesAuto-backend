@@ -5,13 +5,14 @@ module.exports = app => {
   const { STRING, INTEGER, DATE } = app.Sequelize;
 
   const User = app.model.define('user', {
-    ID: {
+    id: {
       type: INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
     username: STRING(255),
     password: STRING(32),
+    rid: INTEGER(2),
     salt: STRING(6),
   },
   {freezeTableName: true,
@@ -28,6 +29,11 @@ module.exports = app => {
     });
   };
 
+  User.findByUid = async function(uid){
+    return await this.findOne({
+      where: { id:uid },
+    });
+  }
 
   User.checkLoginByPassword = async function(username,password){
       let now = parseInt(new Number(new Date().getTime()/1000).toFixed(0));
@@ -40,7 +46,7 @@ module.exports = app => {
       }
       var hash_pw = User.hashPassword(password,userData.salt);
       if(hash_pw != userData.password){
-        this.errorCode = 10004;
+        this.errorCode = 10001;
         this.errorMsg = '用户名或密码错误';
         return  false;
       }
@@ -55,13 +61,14 @@ module.exports = app => {
       var returnData = {
         username : username,
         rid : userData.rid,
+        uid : userData.id,
         token: app.jwt.sign(jwtData, app.config.jwt.secret),
       }
       return returnData;
 
   };
 
-  User.hashPassword = async function(password,salt){
+  User.hashPassword = function(password,salt){
     var hash_1 = crypto.createHash('md5').update(password).digest('hex');
     var hash_2 = hash_1 + "" + salt;
     return crypto.createHash('md5').update(hash_2).digest('hex');

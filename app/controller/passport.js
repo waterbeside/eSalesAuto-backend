@@ -5,16 +5,19 @@ const BaseController = require('./Base');
 class PassportController extends BaseController {
   async index() {
     const { ctx, app } = this;
-    // console.log(ctx.request.params);
-    const token = this.app.jwt.sign({ exp:180000233232,uid:22,name:'test' }, this.app.config.jwt.secret);
-    // var checkRes =await this.checkLogin();
-    // if(!checkRes){
-    //   return this.jsonReturn(0,{token},'Successful');
-    // }
+  
+    var userData = await this.getUserData(1);
+    if(!userData){
+      return this.jsonReturn(10004,'Failed');
+    }
+    var returnData =  {
+      "username" : userData.username,
+      "uid" : userData.id,
+      "rid" : userData.rid,
+      "roles" : userData.rid == 1 ? ['admin'] : [],
+    }
+    return this.jsonReturn(0,returnData,'Successful');
 
-    var userData = await this.getUserData();
-    console.log(userData);
-    return this.jsonReturn(0,{token},'Successful');
   }
 
   async login() {
