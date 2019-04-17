@@ -2,11 +2,7 @@ const jwt = require('jsonwebtoken') //引入jsonwebtoken
 
 module.exports = () => {
   return async function (ctx, next) {
-    ctx.app.myData = {};
-    ctx.app.myData.userBaseData = {a:1};
 
-    await next();
-    return false;
 
     const config =  ctx.app.config;
     const jwt = ctx.app.jwt;
@@ -32,7 +28,7 @@ module.exports = () => {
 
     if (ctx.request.header['authorization']) {
       let token = ctx.request.header['authorization'].split(' ')[1];
-      console.log(token)
+      // console.log(token)
       let decoded;
       //解码token
       try {
@@ -48,7 +44,7 @@ module.exports = () => {
         }
       }
       ctx.app.myData = {};
-      ctx.app.myData.userBaseData = decoded;
+      ctx.app.myData.jwt_decoded = decoded;
       await next();
     }else{
       jsonReturn(10004,'你尚未登入，请登入');
