@@ -4,8 +4,13 @@ const Controller = require('egg').Controller;
 
 class BaseController extends Controller {
 
-
-  async jsonReturn(code,data = {},msg = "") {
+  /**
+   * 用于接口输出,返回指定的json
+   * @param {Integer} code 状态码
+   * @param {Array} data 
+   * @param {String} msg 
+   */
+  jsonReturn(code,data = {},msg = "") {
     const { ctx } = this;
     if(typeof(data)=="string"){
       msg = data;
@@ -18,7 +23,7 @@ class BaseController extends Controller {
   }
 
   /**
-   * 取得用户信息
+   * 取得用户信息 
    */
   async getUserData(type = 0){
     const { ctx , app} = this;
@@ -48,8 +53,24 @@ class BaseController extends Controller {
       }
     }
     return false;
-    
   }
+  
+
+  
+  /**
+   * 返回分页页码数据
+   * @param {Object} param0 
+   */
+  pagination ({total, page, pagesize}){
+    total = parseInt(total);
+    page  = parseInt(page) ? parseInt(page) : 1;
+    let offset = (page - 1)*pagesize;
+    let pagecount = Math.ceil(total/pagesize);
+    return {
+      total,page,pagesize,offset,pagecount
+    }
+  }
+
 
 }
 
