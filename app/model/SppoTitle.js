@@ -17,15 +17,44 @@ module.exports = app => {
     Rev_NO:DATE,
     PPO_ID:STRING(20),
     Style_No:STRING(20),
+    Season:STRING(10),
+    Garment_Wash:STRING(20),
+    Is_Active: INTEGER,
   },
   {freezeTableName: true,
     timestamps: false, 
   }
  );
 
+
+ //通过id查数据
   SppoTitle.findById = async function(id) {
     return await this.findOne({
       where: { ID:id },
+    });
+  };
+
+  //通过PPO_NO查数据
+  SppoTitle.findByPpoNo = async function(PPO_NO) {
+    return await this.findOne({
+      where: { 
+        PPO_NO:PPO_NO,
+        Is_Active:{
+          [Op.gt]: 0
+        },
+      },
+    });
+  };
+
+  //通过Style_NO查数据
+  SppoTitle.findByStyleNo = async function(Style_NO) {
+    return await this.findOne({
+      where: { 
+        PPO_NO:Style_No,
+        Is_Active:{
+          [Op.gt]: 0
+        },
+      },
     });
   };
 
