@@ -32,6 +32,12 @@ class PassportController extends BaseController {
     }
     return this.jsonReturn(0,res,'Successful');
 
+  }
+
+  async logout() {
+    const { ctx } = this;
+   
+    return this.jsonReturn(0,'Successful');
 
   }
 
