@@ -1,7 +1,5 @@
 const secret = require('./secret.js');
 
-console.log(secret.mssql);
-
 exports.sequelize = {
   datasources: [
     {
@@ -13,6 +11,7 @@ exports.sequelize = {
       port: secret.mssql.port,
       username: secret.mssql.username,
       password: secret.mssql.password,
+      timezone: '+08:00' 
       // other sequelize configurations
     },
     // {
