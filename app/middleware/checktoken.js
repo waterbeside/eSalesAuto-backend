@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken') //引入jsonwebtoken
 
-module.exports = () => {
+module.exports = (options) => {
   return async function (ctx, next) {
-
+    // console.log(typeof(options.returnType));
 
     const config =  ctx.app.config;
     const jwt = ctx.app.jwt;
