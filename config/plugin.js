@@ -18,6 +18,12 @@ exports.cors = {
     enable: true,
     package: 'egg-cors',
 };
+
+exports.passport = {
+  enable: true,
+  package: 'egg-passport',
+};
+
 //
 // /** @type Egg.EggPlugin */
 // module.exports = ()=>{

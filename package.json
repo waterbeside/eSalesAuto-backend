@@ -12,9 +12,12 @@
     "egg-jwt": "^3.1.6",
     "egg-mssql": "^1.0.2",
     "egg-oracle": "^3.0.0",
+    "egg-passport": "^2.0.1",
+    "egg-passport-local": "^1.2.1",
     "egg-scripts": "^2.11.0",
     "egg-sequelize": "^4.3.1",
-    "jsonwebtoken": "^8.5.1"
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.24.0"
   },
   "devDependencies": {
     "autod": "^3.0.1",
