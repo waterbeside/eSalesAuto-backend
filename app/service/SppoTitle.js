@@ -7,7 +7,6 @@ class SppoTitleService extends Service {
     // use db1
     let pool = await mssql.connect(this.app.config.mssql.clients.db1);
     let request = await pool.request();
-    console.log(this.app.Mssql);
     // const request = new mssql.Request((await this.app.mssql.get('db1')));
     const rows = await request.query('SELECT * FROM SPPO_Title;');
     mssql.close()
@@ -16,7 +15,6 @@ class SppoTitleService extends Service {
   }
 
   async find(id) {
-    console.log(id);
     console.log(typeof(this.ctx.model.SppoTitle.findById));
     const post = await this.ctx.model.SppoTitle.findById(id);
     if (!post) {
