@@ -19,13 +19,17 @@ module.exports = app => {
   router.get('/api/v1/passport', checktoken(),controller.v1.passport.index);
   router.post('/api/v1/passport/login', controller.v1.passport.login);
   router.delete('/api/v1/passport', controller.v1.passport.logout);
+  router.get('/api/v1/passport/customer_code', checktoken(),controller.v1.passport.customer_code);
+  
   // router.get('/passport',controller.passport.index);
   // router.get('/passport/login', controller.passport.login);
 
   //SPPO模块
   router.get('/api/v1/sppo',checktoken(),controller.v1.sppo.index);
   router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del);
-
+  
+  //brand
+  router.get('/api/v1/brand',controller.v1.brand.index);
 
 
 };
