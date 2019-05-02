@@ -14,20 +14,22 @@ exports.sequelize = {
       timezone: '+08:00' 
       // other sequelize configurations
     },
-    // {
-    //   delegate: 'admninModel', // load all models to app.adminModel and ctx.adminModel
-    //   baseDir: 'admin_model', // load models from `app/admin_model/*.js`
-    //   database: 'admin',
-    //   // other sequelize configurations
-    // },
+   
   ],
+};
+
+
+exports.oracle = {
+  client: {
+    user: secret.oracle.username,
+    password: secret.oracle.password,
+    connectString: secret.oracle.connectString,
+  },
 };
 
 
 
 exports.mssql = {
-
-
   // Multi Databases
   clients: {
     db1: {
@@ -40,6 +42,15 @@ exports.mssql = {
   },
   app: true,
 };
+
+exports.redis = {
+  client: {
+    port: secret.redis.port,          // Redis port
+    host: secret.redis.host,   // Redis host
+    password: secret.redis.password,
+    db: 0,
+  },
+}
 
 // exports.mysql = {
 //   client: {

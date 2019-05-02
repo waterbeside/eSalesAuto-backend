@@ -14,6 +14,17 @@ exports.mssql = {
   enable: true,
   package: 'egg-mssql',
 };
+
+exports.oracle = {
+  enable: true,
+  package: 'egg-oracle',
+};
+
+exports.redis = {
+  enable: true,
+  package: 'egg-redis',
+};
+
 exports.cors = {
     enable: true,
     package: 'egg-cors',

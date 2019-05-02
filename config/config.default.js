@@ -35,8 +35,6 @@ module.exports = appInfo => {
 
 
 
-
-
   config.security = {
     csrf: {
         enable: false,
@@ -56,6 +54,9 @@ module.exports = appInfo => {
     // myAppName: 'egg',
     sequelize:db_setting.sequelize,
     mssql:db_setting.mssql,
+    oracle:db_setting.oracle,
+    redis:db_setting.redis,
+    
   };
 
 
