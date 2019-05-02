@@ -13,3 +13,4 @@ config/secret.js
 *.un~
 typings/
 .nyc_output/
+/test/test_*.js
