@@ -4,7 +4,7 @@ const crypto = require('crypto');
 module.exports = app => {
   const { STRING, INTEGER, DATE } = app.Sequelize;
 
-  const User = app.model.define('user', {
+  const User = app.model.define('User', {
     id: {
       type: INTEGER,
       primaryKey: true,
@@ -14,6 +14,7 @@ module.exports = app => {
     password: STRING(32),
     rid: INTEGER(2),
     salt: STRING(6),
+    sales_team: STRING(20),
   },
   {freezeTableName: true,
     timestamps: false,
