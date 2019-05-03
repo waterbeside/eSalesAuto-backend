@@ -14,6 +14,18 @@ exports.sequelize = {
       timezone: '+08:00' 
       // other sequelize configurations
     },
+    {
+      delegate: 'model2', // load all models to app.model and ctx.model
+      baseDir: 'model2', // load models from `app/model/*.js`
+      dialect: 'mssql', // support: mysql, mariadb, postgres, mssql
+      database: 'ESCM_EEL',
+      host: secret.mssql2.host,
+      port: secret.mssql2.port,
+      username: secret.mssql2.username,
+      password: secret.mssql2.password,
+      timezone: '+08:00' 
+      // other sequelize configurations
+    },
    
   ],
 };
@@ -38,6 +50,13 @@ exports.mssql = {
       port: secret.mssql.port,
       user: secret.mssql.username,
       password: secret.mssql.password,
+    },
+    db2: {
+      database: 'ESCM_EEL',
+      server: secret.mssql2.host,
+      port: secret.mssql2.port,
+      user: secret.mssql2.username,
+      password: secret.mssql2.password,
     },
   },
   app: true,

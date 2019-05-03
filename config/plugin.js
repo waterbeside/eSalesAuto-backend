@@ -16,12 +16,12 @@ exports.mssql = {
 };
 
 exports.oracle = {
-  enable: true,
+  enable: false,
   package: 'egg-oracle',
 };
 
 exports.redis = {
-  enable: true,
+  enable: false,
   package: 'egg-redis',
 };
 
