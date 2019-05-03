@@ -29,7 +29,8 @@ module.exports = app => {
   router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del);
   
   //brand
-  router.get('/api/v1/brand',controller.v1.brand.index);
-
+  router.get('/api/v1/gen_brand/get_brand_code',controller.v1.genBrand.getBrandCode);
+  router.get('/api/v1/gen_factory/get_factory_ids',controller.v1.genFactory.getFactoryIds);
+  
 
 };
