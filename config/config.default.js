@@ -29,10 +29,11 @@ module.exports = appInfo => {
 
 
 
-  exports.jwt = {
+  config.jwt = {
     secret: secret.jwt.secret,
   };
 
+  
 
 
   config.security = {
