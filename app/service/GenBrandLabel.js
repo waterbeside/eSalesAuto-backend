@@ -14,7 +14,7 @@ class GenBrandLabelService extends BaseService {
     // console.log(this.formatOracleRes(res))
     // return this.formatOracleRes(res);    
 
-    let sql = "SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM [ESCM_EEL].[escmowner].[GEN_BRAND_LABEL] WHERE CUSTOMER_CD = '"+customer_code+"'  AND ACTIVE='Y' ORDER BY BRAND_CD ASC"
+    let sql = "SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM [escmowner].[GEN_BRAND_LABEL] WHERE CUSTOMER_CD = '"+customer_code+"'  AND ACTIVE='Y' ORDER BY BRAND_CD ASC"
     let res = await this.ctx.model2.query(sql);
     return res[0];
 

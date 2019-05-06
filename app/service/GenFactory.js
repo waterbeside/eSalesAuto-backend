@@ -13,8 +13,8 @@ class GenFactoryService extends BaseService {
     // });
     // console.log(returnData)
     // return returnData;
-    
-    let sql = "SELECT DISTINCT FACTORY_ID FROM [ESCM_EEL].[escmowner].[GEN_FACTORY] FI WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL"
+
+    let sql = "SELECT DISTINCT FACTORY_ID FROM [escmowner].[GEN_FACTORY] FI WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL"
     let res = await this.ctx.model2.query(sql);
     let returnData = [];
     res[0].forEach(item=>{

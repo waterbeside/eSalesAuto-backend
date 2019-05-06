@@ -19,7 +19,7 @@ module.exports = app => {
 );
 
 
- //通过id查数据
+  //通过id查数据
   MasterGenUser.findByUserID = async function(username) {
     return await this.findAll({
       where: { User_ID:username },

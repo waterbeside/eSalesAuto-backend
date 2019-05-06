@@ -21,6 +21,7 @@ class BaseService extends Service {
     return list;
   }
   
+  
 }
 
 module.exports = BaseService;
