@@ -24,7 +24,7 @@ module.exports = app => {
     Yarn_Type:STRING(100),
     CC_Desc:STRING(1000),
     CC_Remark:STRING(100),
-    PPO_NO:STRING(20),
+    PPO_ID :STRING(20),
   },
   {freezeTableName: true,
     timestamps: false, 
