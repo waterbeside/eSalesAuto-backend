@@ -28,6 +28,7 @@ module.exports = app => {
   router.get('/api/v1/sppo',checktoken(),controller.v1.sppo.index);
   router.post('/api/v1/sppo',checktoken(),controller.v1.sppo.save);
   router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del);
+  router.get('/api/v1/sppo/check_customer_fab_code_exist',checktoken(),controller.v1.sppo.checkCustomerFabCodeExist);
   
   //brand
   router.get('/api/v1/gen_brand/get_brand_code',checktoken(),controller.v1.genBrand.getBrandCode);
