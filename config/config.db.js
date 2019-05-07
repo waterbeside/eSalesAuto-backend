@@ -11,7 +11,11 @@ exports.sequelize = {
       port: secret.mssql.port,
       username: secret.mssql.username,
       password: secret.mssql.password,
-      timezone: '+08:00' 
+      timezone: '+08:00',
+      dialectOptions:{
+        requestTimeout: 60000,
+          // instanceName:'DEV'
+      }  //设置MSSQL超时时间
       // other sequelize configurations
     },
     {
@@ -23,7 +27,11 @@ exports.sequelize = {
       port: secret.mssql2.port,
       username: secret.mssql2.username,
       password: secret.mssql2.password,
-      timezone: '+08:00' 
+      timezone: '+08:00',
+      dialectOptions:{
+        requestTimeout: 15000,
+          // instanceName:'DEV'
+      } 
       // other sequelize configurations
     },
    
