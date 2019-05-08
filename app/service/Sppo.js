@@ -8,13 +8,13 @@ class SppoService extends Service {
   async getUnitByGP(garment_part){
     const { ctx, app } = this;   
     let cacheKey = "sppo:master_unit:garmentPart_"+garment_part;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       return cacheData;
     }
     let Unit = await ctx.model.MasterUnit.getUnitByGP(garment_part);
     if(Unit){
-      ctx.helper.setStoreData(cacheKey,Unit);
+      await ctx.helper.setStoreData(cacheKey,Unit,60*5);
       return Unit;
     }else{
       return '';
@@ -27,14 +27,14 @@ class SppoService extends Service {
   async getSppoGpDelDesData(Garment_Part,PPO_ID) {
     const { ctx , app} = this;
     let cacheKey = "sppo:sppo_gp_del_des:ppoId_"+PPO_ID+"_garmentPart_"+Garment_Part;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       return cacheData;
     }
-    // let cacheData = this.ctx.helper.getStoreData('test')
+    // let cacheData = await this.ctx.helper.getStoreData('test')
     const res = await  ctx.model.SppoGpDelDestinationInfo.findOne({where:{PPO_ID,Garment_Part}});
     if(res){
-      ctx.helper.setStoreData(cacheKey,res);
+      await ctx.helper.setStoreData(cacheKey,res,60);
     }
     return res;
   }
@@ -43,12 +43,12 @@ class SppoService extends Service {
   async getMasterQtyData(Garment_Part){
     const { ctx , app} = this;
     let cacheKey = "sppo:master_qty:garmentPart_"+Garment_Part;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       return cacheData;
     }
     const res = await  ctx.model.MasterQtyLD.findOne({where:{Garment_Part},order:[['Garment_Part', 'DESC']]});
-    ctx.helper.setStoreData(cacheKey,res);
+    await ctx.helper.setStoreData(cacheKey,res,60);
     return res;
 
   }
@@ -57,13 +57,13 @@ class SppoService extends Service {
   async getSppoColorQtyData(Garment_Part,PPO_ID){
     const { ctx , app} = this;
     let cacheKey = "sppo:sppo_color_qty:ppoId_"+PPO_ID+"_garmentPart_"+Garment_Part;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       return cacheData;
     }
     const res = await  ctx.model.SppoColorQtyInfo.findOne({where:{PPO_ID,Garment_Part}});
     if(res){
-      ctx.helper.setStoreData(cacheKey,res);
+      await ctx.helper.setStoreData(cacheKey,res,60);
     }
     return res;
 
@@ -74,7 +74,7 @@ class SppoService extends Service {
   async getMasterFabDataByFC(Customer_Fab_Code){
     const { ctx , app} = this;
     let cacheKey = "sppo:master_fab:cfc_" + Customer_Fab_Code;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       console.log('masterFabCache')
       return cacheData;
@@ -84,7 +84,7 @@ class SppoService extends Service {
         Customer_Fab_Code
       }
     });
-    ctx.helper.setStoreData(cacheKey,res);
+    await ctx.helper.setStoreData(cacheKey,res,60);
     return res;
   }
 
@@ -92,7 +92,7 @@ class SppoService extends Service {
   async getSppoFabData(Customer_Fab_Code,PPO_NO) {
     const { ctx , app} = this;
     let cacheKey = "sppo:sppo_fab:cfc_"+Customer_Fab_Code+"_sppoNo_"+PPO_NO;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       console.log('fabCache')
       return cacheData;
@@ -104,7 +104,7 @@ class SppoService extends Service {
       }
     });
     if(res){
-      ctx.helper.setStoreData(cacheKey,res);
+      await ctx.helper.setStoreData(cacheKey,res,60);
     }
     return res;
   }
@@ -113,7 +113,7 @@ class SppoService extends Service {
   async getMasterCollarCuffDataByFC(Customer_Fab_Code){
     const { ctx , app} = this;
     let cacheKey = "sppo:master_collar_cuff:cfc_" + Customer_Fab_Code;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       console.log('masterFabCache')
       return cacheData;
@@ -123,7 +123,7 @@ class SppoService extends Service {
         Customer_Fab_Code
       }
     });
-    ctx.helper.setStoreData(cacheKey,res);
+    await ctx.helper.setStoreData(cacheKey,res,60);
     return res;
   }
 
@@ -131,19 +131,19 @@ class SppoService extends Service {
   async getSppoCollarCuffData(Customer_Fab_Code,PPO_ID) {
     const { ctx , app} = this;
     let cacheKey = "sppo:sppo_collar_cuff:cfc_"+Customer_Fab_Code+"_sppoID_"+PPO_ID;
-    let cacheData = ctx.helper.getStoreData(cacheKey);
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       console.log('fabCache')
       return cacheData;
     }
-    // let cacheData = this.ctx.helper.getStoreData('test')
+    // let cacheData = await this.ctx.helper.getStoreData('test')
     const res = await ctx.model.SppoCollarCuff.findOne({
       where:{
         Customer_Fab_Code,PPO_ID
       }
     });
     if(res){
-      ctx.helper.setStoreData(cacheKey,res);
+      await ctx.helper.setStoreData(cacheKey,res,60);
     }
     return res;
   }

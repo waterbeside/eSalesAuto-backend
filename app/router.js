@@ -25,18 +25,23 @@ module.exports = app => {
   // router.get('/passport/login', controller.passport.login);
 
   //SPPO模块
-  router.get('/api/v1/sppo',checktoken(),controller.v1.sppo.index);
-  router.post('/api/v1/sppo',checktoken(),controller.v1.sppo.save);
-  router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del);
+  router.get('/api/v1/sppo',checktoken(),controller.v1.sppo.index);  //列表
+  router.post('/api/v1/sppo',checktoken(),controller.v1.sppo.save);  //新建
+  router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del); //删除
   router.get('/api/v1/sppo/check_customer_fab_code_exist',checktoken(),controller.v1.sppo.checkCustomerFabCodeExist);
-  router.get('/api/v1/sppo/detail',checktoken(),controller.v1.sppo.detail);
+  router.get('/api/v1/sppo/detail',checktoken(),controller.v1.sppo.detail); //明细
+  router.put('/api/v1/sppo/batch',checktoken(),controller.v1.sppo.batchEdit); //批量编辑
+  router.put('/api/v1/sppo',checktoken(),controller.v1.sppo.edit); //编辑
   
+
   //brand
   router.get('/api/v1/gen_brand/get_brand_code',checktoken(),controller.v1.genBrand.getBrandCode);
   //factory
   router.get('/api/v1/gen_factory/get_factory_ids',checktoken(),controller.v1.genFactory.getFactoryIds);
   //washType
   router.get('/api/v1/gen_wash_type/check_exist',checktoken(),controller.v1.genWashType.checkExist);
+  router.get('/api/v1/gen_wash_type/wash_types',checktoken(),controller.v1.genWashType.getWashTypes);
+  
   //fabric type
   router.get('/api/v1/fab_fabric_type/check_exist',checktoken(),controller.v1.fabFabricType.checkExist);
 

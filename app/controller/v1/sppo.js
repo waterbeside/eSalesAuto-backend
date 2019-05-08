@@ -407,6 +407,21 @@ class SppoController extends BaseController {
   }
 
   /**
+   * 编辑
+   */
+  async edit(){
+
+  }
+
+  /**
+   * 批量编辑
+   */
+  async batchEdit(){
+    
+
+  }
+
+  /**
    * 创建一个 PPO_NO
    */
   async buildPpoNo(){
