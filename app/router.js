@@ -29,19 +29,20 @@ module.exports = app => {
   router.post('/api/v1/sppo',checktoken(),controller.v1.sppo.save);
   router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del);
   router.get('/api/v1/sppo/check_customer_fab_code_exist',checktoken(),controller.v1.sppo.checkCustomerFabCodeExist);
+  router.get('/api/v1/sppo/detail',checktoken(),controller.v1.sppo.detail);
   
   //brand
   router.get('/api/v1/gen_brand/get_brand_code',checktoken(),controller.v1.genBrand.getBrandCode);
   //factory
   router.get('/api/v1/gen_factory/get_factory_ids',checktoken(),controller.v1.genFactory.getFactoryIds);
   //washType
-  router.get('/api/v1/gen_wash_type/check_exist',controller.v1.genWashType.checkExist);
+  router.get('/api/v1/gen_wash_type/check_exist',checktoken(),controller.v1.genWashType.checkExist);
   //fabric type
-  router.get('/api/v1/fab_fabric_type/check_exist',controller.v1.fabFabricType.checkExist);
+  router.get('/api/v1/fab_fabric_type/check_exist',checktoken(),controller.v1.fabFabricType.checkExist);
 
   //master_fabrication_ln
-  router.get('/api/v1/master_fabrication_ln',controller.v1.masterFabricationLN.index);
-  router.get('/api/v1/master_fabrication_ln/check_exist',controller.v1.masterFabricationLN.checkExist);
+  router.get('/api/v1/master_fabrication_ln',checktoken(),controller.v1.masterFabricationLN.index);
+  router.get('/api/v1/master_fabrication_ln/check_exist',checktoken(),controller.v1.masterFabricationLN.checkExist);
 
   
 };

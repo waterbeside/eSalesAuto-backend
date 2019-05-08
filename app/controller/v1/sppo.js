@@ -107,6 +107,7 @@ class SppoController extends BaseController {
     let successStyleNoList =[];
     let errorStyleNoList =[];
     let errorIndex =[];
+    let errorMsgList = {};
     
     const userData = await this.getUserData();
     const Creater = userData.username;
@@ -131,10 +132,15 @@ class SppoController extends BaseController {
     }
     // console.log(ctx.helper.asyncForEach)
 
+    /****** test result  */
+    // let returnData= {
+    //   msgList : errorMsgList,
+    //   successStyleNoList:['BB2001548'],
+    //   errorStyleNoList:['BB2001560'],
+    //   errorIndex
+    // }
+    // return this.jsonReturn(0,returnData);
 
-    data.forEach((element,index) => {
-      return element.idx = index;
-    });
     // console.log(data);return false;
 
     //查找所有style_no
@@ -145,7 +151,6 @@ class SppoController extends BaseController {
     // console.log(style_no_array);
     // console.log(style_no_checkExist);
     let basePpoNo = await this.buildBasePpoNo();
-    let errorMsgList = {};
     let Delivery = await ctx.model.MasterLeadTime.getDeliveryByCC(customer_code);//计算交期
     let Ship_Mode = await ctx.model.MasterShipMode.getShipModeByCC(customer_code);//计算Ship_Mode
 
@@ -370,7 +375,8 @@ class SppoController extends BaseController {
     let returnData={
       msgList : errorMsgList,
       successStyleNoList,
-      errorStyleNoList
+      errorStyleNoList,
+      errorIndex
     }
     return this.jsonReturn(0,returnData);
     
@@ -414,7 +420,58 @@ class SppoController extends BaseController {
     return basePpoNo+SerialNo;
   }
 
-  
+
+  /**
+   * 详情
+   */
+  async detail(){
+    const { ctx, app } = this;   
+    let ppo_no = ctx.request.query.ppo_no;
+    
+    let data = {}
+    data.sppoTitle = await ctx.model.SppoTitle.findOne({
+      where:{PPO_NO:ppo_no,Is_Active:1},
+      order:[['Rev_NO','DESC']]
+    });
+    if(!data.sppoTitle){
+      return this.jsonReturn(20002,{},'NO Data');
+    }
+    let PPO_ID = data.sppoTitle.PPO_ID;
+    let PPO_NO = data.sppoTitle.PPO_NO;
+    data.sppoTitle.setDataValue('Create_Time',moment(data.sppoTitle.Create_Time).valueOf());
+    data.sppoTitle.setDataValue('Update_Time',moment(data.sppoTitle.Update_Time).valueOf());
+
+    data.sppoGpDelDest = await ctx.model.SppoGpDelDestinationInfo.findAll({
+      where:{PPO_ID},
+    });
+
+    data.sppoColorQty = await ctx.model.SppoColorQtyInfo.findAll({
+      where:{PPO_ID},
+    });
+
+    data.sppoFabrication = await ctx.model.SppoFabrication.findAll({
+      where:{PPO_NO},
+    });
+
+    data.sppoCollarCuff = await ctx.model.SppoCollarCuff.findAll({
+      where:{PPO_ID},
+    });
+
+    data.itemList = []; 
+    data.sppoGpDelDest.forEach((item,index)=>{
+      let newItem = {};
+      newItem.sppoGpDelDest = item;
+      newItem.sppoColorQty =_.filter(data.sppoColorQty,{PPO_ID,Garment_Part:item.Garment_Part});
+      newItem.sppoFabrication =_.filter(data.sppoFabrication,{PPO_NO,Customer_Fab_Code:item.Customer_Fab_Code});
+      newItem.sppoCollarCuff =_.filter(data.sppoCollarCuff,{PPO_ID,Customer_Fab_Code:item.Customer_Fab_Code});
+      data.itemList.push(newItem);
+    })
+
+    return this.jsonReturn(0,data,'success');
+    
+
+    
+  }
   
 
 
