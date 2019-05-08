@@ -12,6 +12,18 @@ class GenWashTypeController extends BaseController {
     return this.jsonReturn(0,{is_exist:res},'Successfully');
   }
 
+
+  async getWashTypes() {
+    const { ctx ,app} = this;
+    
+    const res = await ctx.service.genWashType.washTypeList();
+    if(res.length == 0){
+      return this.jsonReturn(20002,{list:[]},'No data');
+    }
+    return this.jsonReturn(0,{list:res},'Successfully');
+
+  }
+
 }
 
 
