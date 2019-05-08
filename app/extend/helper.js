@@ -28,7 +28,21 @@ module.exports = {
 
 
   
-  getStoreData(key){
+  async getStoreData(key){
+    if(typeof(this.app.redis)=='object'){
+      const redis = this.app.redis;
+      let caceData = await redis.get(key);
+      if(caceData){
+        let data = JSON.parse(caceData);
+        if(!data){
+          return null;
+        }else{
+          return data;
+        }
+      }else{
+        return null
+      }
+    }
     // return myCache.get(key);
     if(typeof(this.app.myData)!="undefined" && typeof(this.app.myData[key])!="undefined"){
       return this.app.myData[key] ;
@@ -37,12 +51,23 @@ module.exports = {
     }
   },
 
-  setStoreData(key,value){
-    // myCache.set(key,value);
-    if(typeof(this.app.myData)=="undefined"){
-      this.app.myData = {};
+  async setStoreData(key,value,ex=0){
+    if(typeof(this.app.redis)=='object'){
+      const redis = this.app.redis;
+      let dataString = JSON.stringify(value);
+
+      if(ex > 0){
+        await redis.setex(key,ex,dataString);
+      }else{
+        await redis.set(key,dataString);
+      }
+    }else{
+      if(typeof(this.app.myData)=="undefined"){
+        this.app.myData = {};
+      }
+      this.app.myData[key] = value;
     }
-    this.app.myData[key] = value;
+    
     return;
   },
 };
