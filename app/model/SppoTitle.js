@@ -11,10 +11,20 @@ module.exports = app => {
       autoIncrement: true,
     },
     Creater: STRING(10),
-    Create_Time: DATE,
+    Create_Time: {
+      type:DATE,
+      get (){
+        return moment(moment(this.getDataValue('Create_Time')).utc().format('YYYY-MM-DD HH:mm:ss'));
+      }
+    },
     PPO_NO: STRING(20),
     Last_Updater:STRING(10),
-    Update_Time:DATE,
+    Update_Time: {
+      type:DATE,
+      get (){
+        return moment(moment(this.getDataValue('Create_Time')).utc().format('YYYY-MM-DD HH:mm:ss'));
+      }
+    },
     Rev_NO:INTEGER,
     PPO_ID:STRING(20),
     Style_No:STRING(20),
@@ -63,7 +73,7 @@ module.exports = app => {
   };
 
   //通过
-  SppoTitle.buildSerialNo = async function() {
+  SppoTitle.buildSerialNo = async function(setting={}) {
     const Op = app.Sequelize.Op;
     const sequelize = app.Sequelize;
     let start = moment().format('YYYY-01-01 00:00:00');
@@ -71,6 +81,10 @@ module.exports = app => {
     let order = [
       ['Serial_NO', 'DESC'],
     ];
+    let transaction = null;
+    if(typeof(setting.transaction)!="undefined"){
+      transaction = setting.transaction;
+    }
     let res =  await this.findOne({
       attributes: ['Serial_NO'],
       where: { 
@@ -80,7 +94,7 @@ module.exports = app => {
         },
       },
       order
-    });
+    },{transaction});
     if(!res){
       return 1;
     }
