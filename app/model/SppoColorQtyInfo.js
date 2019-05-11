@@ -18,7 +18,8 @@ module.exports = app => {
     Color_Combo : STRING(50),
     Fabric_Code_ESCM : STRING(50),
     Qty  : INTEGER,
-    LD_STD : STRING(20)
+    LD_STD : STRING(20),
+    Remark:STRING(1000),
   },
   {freezeTableName: true,
     timestamps: false, 
