@@ -45,7 +45,8 @@ class SppoController extends BaseController {
 
     //排序
     let order = [
-      ['Create_Time', 'DESC'],
+      // ['Create_Time', 'DESC'],
+      ['PPO_NO', 'DESC'],
     ];
     //分页
     let limit = pagesize;
@@ -64,12 +65,11 @@ class SppoController extends BaseController {
     }
     
     let list = res.map((item,index) => {
-      item.setDataValue('Create_Time',moment(item.Create_Time).valueOf());
-      item.setDataValue('Update_Time',moment(item.Update_Time).valueOf());
-      return item;
+      let newItem = Object.assign(item.dataValues);
+      newItem.Create_Time = moment(item.Create_Time).valueOf();
+      newItem.Update_Time = moment(item.Update_Time).valueOf();
+      return newItem;
     });
-
-    // console.log(list);
     
     let returnData = {
       list,
@@ -111,7 +111,7 @@ class SppoController extends BaseController {
     let errorStyleNoList =[];
     let errorIndex =[];
     let errorMsgList = {};
-    
+    let hasError = 0;
     const userData = await this.getUserData();
     const Creater = userData.username;
 
@@ -133,8 +133,10 @@ class SppoController extends BaseController {
     if(!garment_fty){
       return this.jsonReturn(992,'请选择 Garment Fty');
     }
-    // console.log(ctx.helper.asyncForEach)
 
+    
+
+    // console.log(ctx.helper.asyncForEach)
     /****** test result  */
     // let returnData= {
     //   msgList : errorMsgList,
@@ -143,8 +145,9 @@ class SppoController extends BaseController {
     //   errorIndex
     // }
     // return this.jsonReturn(0,returnData);
-
     // console.log(data);return false;
+
+
 
     //查找所有style_no
     let style_no_kv_list = _.groupBy(data,'style_no');
@@ -153,50 +156,68 @@ class SppoController extends BaseController {
     
     // console.log(style_no_array);
     // console.log(style_no_checkExist);
-    let basePpoNo = await this.buildBasePpoNo();
+    let basePpoNo = await ctx.service.sppo.buildBasePpoNo(Creater);
     let Delivery = await ctx.model.MasterLeadTime.getDeliveryByCC(customer_code);//计算交期
     let Ship_Mode = await ctx.model.MasterShipMode.getShipModeByCC(customer_code);//取得Ship_Mode
-
-
+    let sppoTitleData_list_old = {};
+    let data_sppoTitle_batch = [];
     for(let style_no in style_no_kv_list){
-      console.log('style_no:'+style_no);
-      let hasError = 0;
-      errorMsgList[style_no] = {}
-      let transaction = await this.ctx.model.transaction(); //启用事务
-      try {
+      let dataList = style_no_kv_list[style_no];
+      //验证重复的 Garment_Part Customer_Fab_Code;
+      if(!ctx.service.sppo.check_gp_cfc_same(dataList)){
+        hasError = 1;
+        errMsg =  "'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交'";
+        break;
+      }
+      //检查是否有旧的sppo_title数据 （style_no）
+      let oldTitleItemData  =  await ctx.model.SppoTitle.findOne({where:{Style_No:style_no},order:[['Rev_NO', 'DESC']]});
+      sppoTitleData_list_old[style_no] = oldTitleItemData; 
+    }
+    if(hasError){
+      return this.jsonReturn(-1,errMsg);
+    }
 
-        // 1) 整理处理sppo_title的数据
-        let styleNoGroupItemList = style_no_kv_list[style_no];
-        let oldTitleItemData =  await ctx.model.SppoTitle.findOne({where:{Style_No:style_no},order:[['Serial_NO', 'DESC']]}); //查出原库是否存在这条数据
+  
+    let transaction = await this.ctx.model.transaction(); //启用事务
 
-        style_no_checkExist[style_no] =oldTitleItemData;
+    //查出所有
+    try {
+      let Serial_NO_x = await ctx.model.SppoTitle.buildSerialNo(); 
+      for(let style_no in style_no_kv_list){
+        /*********** SPPO_title ******/
+        let dataList = style_no_kv_list[style_no];     
         style_no_array.push(style_no);
         let Serial_NO = '';
         let PPO_NO = '';
         let Rev_NO = 0;
-        let Season = styleNoGroupItemList[0].season;
-        let Garment_Wash = styleNoGroupItemList[0].garment_wash;
-        if(oldTitleItemData){
-        //取得 流水号
-          Serial_NO = parseInt(oldTitleItemData.Serial_NO);
+        let Season = dataList[0].season;
+        let Garment_Wash = dataList[0].garment_wash;
+
+        // 1) 整理处理sppo_title的数据
+        let data_sppoTitle_old =   sppoTitleData_list_old[style_no]; //查出原库是否存在这条数据
+
+        if(data_sppoTitle_old){
+          //取得 流水号
+          Serial_NO = parseInt(data_sppoTitle_old.Serial_NO);
           //取得或生成 PPO_NO
-          PPO_NO = oldTitleItemData.PPO_NO;
-          Rev_NO = parseInt(oldTitleItemData.Rev_NO) + 1 ;
+          PPO_NO = data_sppoTitle_old.PPO_NO;
+          Rev_NO = parseInt(data_sppoTitle_old.Rev_NO) + 1 ;
         }else{
           //取得 流水号
-          Serial_NO = await ctx.model.SppoTitle.buildSerialNo(); 
+          Serial_NO = Serial_NO_x; 
+          Serial_NO_x = Serial_NO_x + 1;
           if(!Serial_NO){
             errorMsgList[style_no]['all'] = '流水号创建失败';
+            errorStyleNoList.push(style_no);
             hasError = 1;
             throw new Error(errorMsgList[style_no]['all']);
-            // continue;
-            // return this.jsonReturn(-1,'流水号创建失败');
           }
+          
           // 取得或生成 PPO_NO
           PPO_NO = basePpoNo + ctx.helper.prefixO(Serial_NO,5)
         }
         let PPO_ID = PPO_NO + '-' + Rev_NO;
-        let sppo_title_data_item = {
+        let data_sppoTitle_i = {
           Serial_NO,
           PPO_NO,
           Rev_NO,
@@ -208,212 +229,423 @@ class SppoController extends BaseController {
           Garment_Wash,
           Is_Active:1,
         }
-        if(oldTitleItemData){
-          sppo_title_data_item.Creater      = oldTitleItemData.Creater;
-          sppo_title_data_item.Create_Time  = oldTitleItemData.Create_Time;
-          sppo_title_data_item.Last_Updater = Creater;
-          sppo_title_data_item.Update_Time  = new Date();
+        if(data_sppoTitle_old){
+          data_sppoTitle_i.Creater      = data_sppoTitle_old.Creater;
+          data_sppoTitle_i.Create_Time  = data_sppoTitle_old.Create_Time;
+          data_sppoTitle_i.Last_Updater = Creater;
+          data_sppoTitle_i.Update_Time  = new Date();
         }else{
-          sppo_title_data_item.Creater      = Creater;
-          sppo_title_data_item.Create_Time  = new Date();
+          data_sppoTitle_i.Creater      = Creater;
+          data_sppoTitle_i.Create_Time  = new Date();
         }
-        // console.log(sppo_title_data_item);
-        let addSppoTitleRes = await ctx.model.SppoTitle.create(sppo_title_data_item,{transaction});
-        if(oldTitleItemData){ //更改旧版本的is_active状态为  0 
+        // sppoTitleData_list_old.push(data_sppoTitle_i);
+        // console.log(data_sppoTitle_i);
+
+        let addSppoTitleRes = await ctx.model.SppoTitle.create(data_sppoTitle_i,{transaction});
+        if(data_sppoTitle_old){ //更改旧版本的is_active状态为  0 
           await ctx.model.SppoTitle.update({Is_Active:0},{where:{
             Style_No: style_no,
             ID:{[Op.ne]:addSppoTitleRes.ID }
           },transaction});
         }
         
-        /********** *********/
-        //开始循环处理每个style_no里的各项内容
-        let hasItemError = 0;
-        for(let i in styleNoGroupItemList){
-          let item = styleNoGroupItemList[i];
-          console.log('item:'+i);
-          let transaction2 = await this.ctx.model.transaction(); //启用事务
-          try {
-            // 处理Gament_part
-            // 2)	SPPO_GP_Del_Destination_Info(SPPO Garment Part, 客户面料Code，Delivery，Destination信息) 
-            let oldGPItemData = await ctx.service.sppo.getSppoGpDelDesData(item.garment_part,PPO_ID);
-            if(!oldGPItemData){
-              let Unit = await ctx.service.sppo.getUnitByGP(item.garment_part);
-              let sppo_GP_data_item = {
-                PPO_ID,
-                Garment_Part:item.garment_part,
-                Customer_Fab_Code:item.customer_fab_code,
-                Delivery,
-                Destination:garment_fty,
-                Ship_Mode,
-                Unit,
-                Remark:item.remark
-              }
-              let addSppoGpRes = await ctx.model.SppoGpDelDestinationInfo.create(sppo_GP_data_item,{transaction:transaction2});
-              console.log('2)addSppoGpRes');
-            }else{
-              console.log('2)addSppoGpRes jump');
-            }
+        /***  ***/
+        let sppoColorQty_lst_batchData = []; //5)
+        let sppoColorQty_hasPush = [];
+        let sppoGpDelDest_lst_batchData = []; //2)
+        let sppoGpDelDest_hasPush = [];
+        let sppoFabrication_lst_batchData = []; //3)
+        let sppoFabrication_hasPush = [];
+        let sppoCollarCuff_lst_batchData = []; //4)
+        let sppoCollarCuff_hasPush = [];
 
-            // 5)	SPPO_Color_Qty_Info (颜色数量信息)
-            let masterQtyData = await ctx.service.sppo.getMasterQtyData(item.garment_part); //先通过garmaent_part查是body还是领袖
-            if(!masterQtyData){
-              errorMsgList[style_no][i] = 'Garment_Part:'+item.garment_part+' 有误';
-              hasError = 1;
-              hasItemError = 1;
-              throw new Error(errorMsgList[style_no][i]);
-            }
-            let Garment_Part_CD = masterQtyData.Garment_Part_CD;
-            let oldColorQtyItemData = await ctx.service.sppo.getSppoColorQtyData(item.garment_part,PPO_ID);
-            if(!oldColorQtyItemData){
-              let color_combo_no = item.color_combo.substring(0,2);
-              let sppo_color_qty_data_item = {
-                PPO_ID,
-                Garment_Part:item.garment_part,
-                Customer_Fab_Code:item.customer_fab_code,
-                Color_Combo:item.color_combo,
-                Fabric_Code_ESCM: item.customer_fab_code+'_'+color_combo_no,
-                Qty:masterQtyData.Qty,
-                LD_STD:masterQtyData.LD_STD,
-              }
-              let addSppoColorQtyRes = await ctx.model.SppoColorQtyInfo.create(sppo_color_qty_data_item,{transaction:transaction2});
-              console.log('5) addSppoColorQtyRes');
-            }else{
-              console.log('5) addSppoColorQtyRes jump');
-            }
-            
-            if(Garment_Part_CD == 'B') {
-              //3)	SPPO_Fabrication(面料具体信息)
-              let oldFabData = await ctx.service.sppo.getSppoFabData(item.customer_fab_code,PPO_ID);
-              if(!oldFabData){
-                let master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(item.customer_fab_code); 
-                if(!master_fab_data_item){
-                  errorMsgList[style_no][i] = '生成 SPPO_Fabrication 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
-                  hasError = 1;
-                  hasItemError = 1;
-                  throw new Error(errorMsgList[style_no][i]);
-                }
-                let sppo_fab_data_item = {
-                  // PPO_NO,
-                  PPO_ID,
-                  Customer_Fab_Code :   item.customer_fab_code,
-                  Refer_PPO_Usage   :   master_fab_data_item.Refer_PPO_Usage,
-                  Fab_Type          :   master_fab_data_item.Fab_Type,
-                  Fab_Pattern       :   master_fab_data_item.Fab_Pattern,
-                  Fab_Width         :   master_fab_data_item.Fab_Width,
-                  Finishing         :   master_fab_data_item.Finishing,
-                  Dye_Method        :   master_fab_data_item.Dye_Method,
-                  Weight_BW         :   master_fab_data_item.Weight_BW,
-                  Weight_AW         :   master_fab_data_item.Weight_AW,
-                  Shrinkage         :   master_fab_data_item.Shrinkage,
-                  Shrinkage_Test_Method   :   master_fab_data_item.Shrinkage_Test_Method,
-                  Yarn_Count        :   master_fab_data_item.Yarn_Count,
-                  Yarn_Strands      :   master_fab_data_item.Yarn_Strands,
-                  Yarn_Ratio        :   master_fab_data_item.Yarn_Ratio,
-                  Yarn_Type         :   master_fab_data_item.Yarn_Type,
-                  Fab_Desc          :   master_fab_data_item.Fab_Desc,
-                  Fab_Remark        :   master_fab_data_item.Fab_Remark,
-                }
+        // var sppoGpDel_groupList = _.groupBy(dataList, function (n) { return n.name+" ++ "+n.score; });
+        for(let i in dataList){
+          let item = dataList[i];
+          let Customer_Fab_Code = item.customer_fab_code
+          let Garment_Part = item.garment_part
 
-                
-                let addSppoFabRes = await ctx.model.SppoFabrication.create(sppo_fab_data_item,{transaction:transaction2});
-                console.log('3) addSppoFabRes');
-              }
-            }
-
-
-            if(Garment_Part_CD == 'C') {
-              // 4)	SPPO_Collar_Cuff (领袖具体信息)
-              let oldCollarCuffData = await ctx.service.sppo.getSppoCollarCuffData(item.customer_fab_code,PPO_ID);
-              if(!oldCollarCuffData){
-                let master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(item.customer_fab_code); 
-                if(!master_collarCuff_data_item){
-                  errorMsgList[style_no][i] = '生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
-                  hasError = 1;
-                  hasItemError = 1;
-                  throw new Error(errorMsgList[style_no][i]);
-                }
-                let sppo_collarCuff_data_item = {
-                  PPO_ID,
-                  Customer_Fab_Code :   item.customer_fab_code,
-                  Refer_PPO_Usage   :   master_collarCuff_data_item.Refer_PPO_Usage,
-                  CC_Type           :   master_collarCuff_data_item.CC_Type,
-                  CC_Pattern        :   master_collarCuff_data_item.CC_Pattern,
-                  Size              :   item.collar_cuff_size,
-                  Finishing         :   master_collarCuff_data_item.Finishing,
-                  Dye_Method        :   master_collarCuff_data_item.Dye_Method,
-                  Yarn_Count        :   master_collarCuff_data_item.Yarn_Count,
-                  Yarn_Strands      :   master_collarCuff_data_item.Yarn_Strands,
-                  Yarn_Ratio        :   master_collarCuff_data_item.Yarn_Ratio,
-                  Yarn_Type         :   master_collarCuff_data_item.Yarn_Type,
-                  CC_Desc           :   master_collarCuff_data_item.CC_Desc,
-                  CC_Remark         :   master_collarCuff_data_item.CC_Remark,
-                }
-                let addSppoCollarCuffRes = await ctx.model.SppoCollarCuff.create(sppo_collarCuff_data_item,{transaction:transaction2});
-                console.log('4) addSppoCollarCuffRes');
-              }
-            }
-            await transaction2.commit();
-          } catch(err){
-            await transaction2.rollback();
-            errorMsgList[style_no][i] = err.message;
-            errorIndex.push(item.idx);
-            hasError = 1;
-            hasItemError = 1;
-            // throw new Error(err.message);
+          let Unit = await ctx.service.sppo.getUnitByGP(Garment_Part);      
+          let masterQtyData = await ctx.service.sppo.getMasterQtyData(Garment_Part); //先通过garmaent_part查是body还是领袖
+          if(!masterQtyData){
+            errorStyleNoList.push(style_no);
+            throw new Error('Garment_Part Error: empty Master_Qty data');
           }
+          let Garment_Part_CD = masterQtyData.Garment_Part_CD;
+         
+
+  
+          /*********** SPPO_Color_Qty_Info ******/
+          // 5) SPPO_Color_Qty_Info
+          let sppoColorQtyInfo_pkey = 'GP_'+Garment_Part+'_CFC_'+Customer_Fab_Code+'_CC_'+item.color_combo;
+          if(!sppoColorQty_hasPush.includes(sppoColorQtyInfo_pkey)){
+            let color_combo_no = item.color_combo.substring(0,2);
+            let newItem_SppoColorQtyInfo = {
+              PPO_ID,
+              Garment_Part,
+              Customer_Fab_Code,
+              Color_Combo           : item.color_combo,
+              Fabric_Code_ESCM      : Customer_Fab_Code+'_'+color_combo_no,
+              Qty                   : masterQtyData.Qty,
+              LD_STD                : masterQtyData.LD_STD,
+              Remark                : item.remark
+            }
+            sppoColorQty_lst_batchData.push(newItem_SppoColorQtyInfo);
+            sppoColorQty_hasPush.push(sppoColorQtyInfo_pkey);
+          }
+
+           /*********** SPPO_GP_Del_Destination_Info ******/
+          // 2) SPPO_GP_Del_Destination_Info
+          let sppoGpDelDest_pkey = 'GP_'+Garment_Part+'_CFC_'+Customer_Fab_Code;
+          if(!sppoGpDelDest_hasPush.includes(sppoGpDelDest_pkey)){
+            let newItem_SppoGpDelDest = {
+              PPO_ID,
+              Garment_Part,
+              Customer_Fab_Code,
+              Delivery,
+              Destination       :garment_fty,
+              Ship_Mode,
+              Unit,
+              // Remark            :item.remark
+            }
+            sppoGpDelDest_lst_batchData.push(newItem_SppoGpDelDest);
+            sppoGpDelDest_hasPush.push(sppoGpDelDest_pkey);
+          }
+          
+  
+          
+          /*********** SPPO_Fabrication ******/
+          let sppoFabrication_pkey = 'CFC_'+Customer_Fab_Code;
+          if(Garment_Part_CD == 'B' && !sppoFabrication_hasPush.includes(sppoFabrication_pkey)) {
+            //3)	SPPO_Fabrication(面料具体信息)
+            let master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(Customer_Fab_Code); 
+            if(!master_fab_data_item){
+              errorStyleNoList.push(style_no);
+              throw new Error("生成 SPPO_Fabrication 数据失败，customer_fab_code："+Customer_Fab_Code+"找不到对应的Master_collar_cuff数据'");
+            }
+            let newItem_SppoFabrication = {
+              // PPO_NO,
+              PPO_ID,
+              Customer_Fab_Code,
+              Refer_PPO_Usage   :   master_fab_data_item.Refer_PPO_Usage,
+              Fab_Type          :   master_fab_data_item.Fab_Type,
+              Fab_Pattern       :   master_fab_data_item.Fab_Pattern,
+              Fab_Width         :   master_fab_data_item.Fab_Width,
+              Finishing         :   master_fab_data_item.Finishing,
+              Dye_Method        :   master_fab_data_item.Dye_Method,
+              Weight_BW         :   master_fab_data_item.Weight_BW,
+              Weight_AW         :   master_fab_data_item.Weight_AW,
+              Shrinkage         :   master_fab_data_item.Shrinkage,
+              Shrinkage_Test_Method   :   master_fab_data_item.Shrinkage_Test_Method,
+              Yarn_Count        :   master_fab_data_item.Yarn_Count,
+              Yarn_Strands      :   master_fab_data_item.Yarn_Strands,
+              Yarn_Ratio        :   master_fab_data_item.Yarn_Ratio,
+              Yarn_Type         :   master_fab_data_item.Yarn_Type,
+              Fab_Desc          :   master_fab_data_item.Fab_Desc,
+              Fab_Remark        :   master_fab_data_item.Fab_Remark,
+            }
+            sppoFabrication_lst_batchData.push(newItem_SppoFabrication);
+            sppoFabrication_hasPush.push(sppoFabrication_pkey);
+          }
+          
+  
+          /*********** SPPO_Collar_Cuff ******/
+          let sppoCollarCuff_pkey = 'CFC_'+Customer_Fab_Code;
+          if(Garment_Part_CD == 'C' && !sppoCollarCuff_hasPush.includes(sppoCollarCuff_pkey) ) {
+            // 4)	SPPO_Collar_Cuff (领袖具体信息)
+            let master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(Customer_Fab_Code); 
+            if(!master_collarCuff_data_item){
+              errorStyleNoList.push(style_no);
+              throw new Error('生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：'+Customer_Fab_Code+'找不到对应的Master_collar_cuff数据');
+            }
+            let newItem_SppoCollarCuff = {
+              PPO_ID,
+              Customer_Fab_Code,
+              Refer_PPO_Usage   :   master_collarCuff_data_item.Refer_PPO_Usage,
+              CC_Type           :   master_collarCuff_data_item.CC_Type,
+              CC_Pattern        :   master_collarCuff_data_item.CC_Pattern,
+              Size              :   item.collar_cuff_size,
+              Finishing         :   master_collarCuff_data_item.Finishing,
+              Dye_Method        :   master_collarCuff_data_item.Dye_Method,
+              Yarn_Count        :   master_collarCuff_data_item.Yarn_Count,
+              Yarn_Strands      :   master_collarCuff_data_item.Yarn_Strands,
+              Yarn_Ratio        :   master_collarCuff_data_item.Yarn_Ratio,
+              Yarn_Type         :   master_collarCuff_data_item.Yarn_Type,
+              CC_Desc           :   master_collarCuff_data_item.CC_Desc,
+              CC_Remark         :   master_collarCuff_data_item.CC_Remark,
+            }
+            sppoCollarCuff_lst_batchData.push(newItem_SppoCollarCuff);
+            sppoCollarCuff_hasPush.push(sppoCollarCuff_pkey);  
+          }
+  
         }
-        if(hasItemError){
-          // 删表创建了对应PPO_ID的数据
-          await ctx.model.SppoColorQtyInfo.destroy({where:{PPO_ID}})
-          await ctx.model.SppoGpDelDestinationInfo.destroy({where:{PPO_ID}});
-          await ctx.model.SppoCollarCuff.destroy({where:{PPO_ID}});
-          throw new Error('添加style_no为'+style_no+' 的相关数据失败。');
-        }
-        await transaction.commit();
-        successStyleNoList.push(style_no);
-        // return true
-      } catch (e) {
-        console.log(e.message)
-        errorMsgList[style_no]['all'] = '添加style_no为'+style_no+' 的相关数据失败。';
-        errorStyleNoList.push(style_no);
-        await transaction.rollback();
-        // return false
-      }    
+
+
+        console.log('sppoGpDelDest_lst_batchData');
+        console.log(sppoGpDelDest_lst_batchData);
+        console.log('sppoColorQty_lst_batchData');
+        console.log(sppoColorQty_lst_batchData);
+        console.log('sppoFabrication_lst_batchData');
+        console.log(sppoFabrication_lst_batchData);
+        console.log('sppoCollarCuff_lst_batchData');
+        console.log(sppoCollarCuff_lst_batchData);
+
+        await ctx.model.SppoGpDelDestinationInfo.bulkCreate(sppoGpDelDest_lst_batchData,{transaction})
+        await ctx.model.SppoColorQtyInfo.bulkCreate(sppoColorQty_lst_batchData,{transaction})
+        await ctx.model.SppoFabrication.bulkCreate(sppoFabrication_lst_batchData,{transaction})
+        await ctx.model.SppoCollarCuff.bulkCreate(sppoCollarCuff_lst_batchData,{transaction})
+      }
+
+      await transaction.commit();
+    } catch(err){
+      console.log(err.message)
+      await transaction.rollback();
+      
+      return this.jsonReturn(-1,err.message);
+
     }
     let returnData={
-      msgList : errorMsgList,
-      successStyleNoList,
+      // msgList : errorMsgList,
       errorStyleNoList,
-      errorIndex
     }
     return this.jsonReturn(0,returnData);
+
+
+
+
+    // for(let style_no in style_no_kv_list){
+    //   console.log('style_no:'+style_no);
+    //   let hasError = 0;
+    //   errorMsgList[style_no] = {}
+    //   let transaction = await this.ctx.model.transaction(); //启用事务
+    //   try {
+
+    //     // 1) 整理处理sppo_title的数据
+    //     let styleNoGroupItemList = style_no_kv_list[style_no];
+    //     let oldTitleItemData =  await ctx.model.SppoTitle.findOne({where:{Style_No:style_no},order:[['Serial_NO', 'DESC']]}); //查出原库是否存在这条数据
+
+    //     style_no_checkExist[style_no] =oldTitleItemData;
+    //     style_no_array.push(style_no);
+    //     let Serial_NO = '';
+    //     let PPO_NO = '';
+    //     let Rev_NO = 0;
+    //     let Season = styleNoGroupItemList[0].season;
+    //     let Garment_Wash = styleNoGroupItemList[0].garment_wash;
+    //     if(oldTitleItemData){
+    //     //取得 流水号
+    //       Serial_NO = parseInt(oldTitleItemData.Serial_NO);
+    //       //取得或生成 PPO_NO
+    //       PPO_NO = oldTitleItemData.PPO_NO;
+    //       Rev_NO = parseInt(oldTitleItemData.Rev_NO) + 1 ;
+    //     }else{
+    //       //取得 流水号
+    //       Serial_NO = await ctx.model.SppoTitle.buildSerialNo(); 
+    //       if(!Serial_NO){
+    //         errorMsgList[style_no]['all'] = '流水号创建失败';
+    //         hasError = 1;
+    //         throw new Error(errorMsgList[style_no]['all']);
+    //         // continue;
+    //         // return this.jsonReturn(-1,'流水号创建失败');
+    //       }
+    //       // 取得或生成 PPO_NO
+    //       PPO_NO = basePpoNo + ctx.helper.prefixO(Serial_NO,5)
+    //     }
+    //     let PPO_ID = PPO_NO + '-' + Rev_NO;
+    //     let sppo_title_data_item = {
+    //       Serial_NO,
+    //       PPO_NO,
+    //       Rev_NO,
+    //       PPO_ID,
+    //       Style_No:style_no,
+    //       Season,
+    //       Customer_Code:customer_code,
+    //       Brand:brand,
+    //       Garment_Wash,
+    //       Is_Active:1,
+    //     }
+    //     if(oldTitleItemData){
+    //       sppo_title_data_item.Creater      = oldTitleItemData.Creater;
+    //       sppo_title_data_item.Create_Time  = oldTitleItemData.Create_Time;
+    //       sppo_title_data_item.Last_Updater = Creater;
+    //       sppo_title_data_item.Update_Time  = new Date();
+    //     }else{
+    //       sppo_title_data_item.Creater      = Creater;
+    //       sppo_title_data_item.Create_Time  = new Date();
+    //     }
+    //     // console.log(sppo_title_data_item);
+    //     let addSppoTitleRes = await ctx.model.SppoTitle.create(sppo_title_data_item,{transaction});
+    //     if(oldTitleItemData){ //更改旧版本的is_active状态为  0 
+    //       await ctx.model.SppoTitle.update({Is_Active:0},{where:{
+    //         Style_No: style_no,
+    //         ID:{[Op.ne]:addSppoTitleRes.ID }
+    //       },transaction});
+    //     }
+        
+    //     /********** *********/
+    //     //开始循环处理每个style_no里的各项内容
+    //     let hasItemError = 0;
+    //     for(let i in styleNoGroupItemList){
+    //       let item = styleNoGroupItemList[i];
+    //       console.log('item:'+i);
+    //       let transaction2 = await this.ctx.model.transaction(); //启用事务
+    //       try {
+    //         // 处理Gament_part
+    //         // 2)	SPPO_GP_Del_Destination_Info(SPPO Garment Part, 客户面料Code，Delivery，Destination信息) 
+    //         let oldGPItemData = await ctx.service.sppo.getSppoGpDelDesData(item.garment_part,PPO_ID);
+    //         if(!oldGPItemData){
+    //           let Unit = await ctx.service.sppo.getUnitByGP(item.garment_part);
+    //           let sppo_GP_data_item = {
+    //             PPO_ID,
+    //             Garment_Part:item.garment_part,
+    //             Customer_Fab_Code:item.customer_fab_code,
+    //             Delivery,
+    //             Destination:garment_fty,
+    //             Ship_Mode,
+    //             Unit,
+    //             Remark:item.remark
+    //           }
+    //           let addSppoGpRes = await ctx.model.SppoGpDelDestinationInfo.create(sppo_GP_data_item,{transaction:transaction2});
+    //           console.log('2)addSppoGpRes');
+    //         }else{
+    //           console.log('2)addSppoGpRes jump');
+    //         }
+
+    //         // 5)	SPPO_Color_Qty_Info (颜色数量信息)
+    //         let masterQtyData = await ctx.service.sppo.getMasterQtyData(item.garment_part); //先通过garmaent_part查是body还是领袖
+    //         if(!masterQtyData){
+    //           errorMsgList[style_no][i] = 'Garment_Part:'+item.garment_part+' 有误';
+    //           hasError = 1;
+    //           hasItemError = 1;
+    //           throw new Error(errorMsgList[style_no][i]);
+    //         }
+    //         let Garment_Part_CD = masterQtyData.Garment_Part_CD;
+    //         let oldColorQtyItemData = await ctx.service.sppo.getSppoColorQtyData(item.garment_part,PPO_ID);
+    //         if(!oldColorQtyItemData){
+    //           let color_combo_no = item.color_combo.substring(0,2);
+    //           let sppo_color_qty_data_item = {
+    //             PPO_ID,
+    //             Garment_Part:item.garment_part,
+    //             Customer_Fab_Code:item.customer_fab_code,
+    //             Color_Combo:item.color_combo,
+    //             Fabric_Code_ESCM: item.customer_fab_code+'_'+color_combo_no,
+    //             Qty:masterQtyData.Qty,
+    //             LD_STD:masterQtyData.LD_STD,
+    //           }
+    //           let addSppoColorQtyRes = await ctx.model.SppoColorQtyInfo.create(sppo_color_qty_data_item,{transaction:transaction2});
+    //           console.log('5) addSppoColorQtyRes');
+    //         }else{
+    //           console.log('5) addSppoColorQtyRes jump');
+    //         }
+            
+    //         if(Garment_Part_CD == 'B') {
+    //           //3)	SPPO_Fabrication(面料具体信息)
+    //           let oldFabData = await ctx.service.sppo.getSppoFabData(item.customer_fab_code,PPO_ID);
+    //           if(!oldFabData){
+    //             let master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(item.customer_fab_code); 
+    //             if(!master_fab_data_item){
+    //               errorMsgList[style_no][i] = '生成 SPPO_Fabrication 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
+    //               hasError = 1;
+    //               hasItemError = 1;
+    //               throw new Error(errorMsgList[style_no][i]);
+    //             }
+    //             let sppo_fab_data_item = {
+    //               // PPO_NO,
+    //               PPO_ID,
+    //               Customer_Fab_Code :   item.customer_fab_code,
+    //               Refer_PPO_Usage   :   master_fab_data_item.Refer_PPO_Usage,
+    //               Fab_Type          :   master_fab_data_item.Fab_Type,
+    //               Fab_Pattern       :   master_fab_data_item.Fab_Pattern,
+    //               Fab_Width         :   master_fab_data_item.Fab_Width,
+    //               Finishing         :   master_fab_data_item.Finishing,
+    //               Dye_Method        :   master_fab_data_item.Dye_Method,
+    //               Weight_BW         :   master_fab_data_item.Weight_BW,
+    //               Weight_AW         :   master_fab_data_item.Weight_AW,
+    //               Shrinkage         :   master_fab_data_item.Shrinkage,
+    //               Shrinkage_Test_Method   :   master_fab_data_item.Shrinkage_Test_Method,
+    //               Yarn_Count        :   master_fab_data_item.Yarn_Count,
+    //               Yarn_Strands      :   master_fab_data_item.Yarn_Strands,
+    //               Yarn_Ratio        :   master_fab_data_item.Yarn_Ratio,
+    //               Yarn_Type         :   master_fab_data_item.Yarn_Type,
+    //               Fab_Desc          :   master_fab_data_item.Fab_Desc,
+    //               Fab_Remark        :   master_fab_data_item.Fab_Remark,
+    //             }
+
+                
+    //             let addSppoFabRes = await ctx.model.SppoFabrication.create(sppo_fab_data_item,{transaction:transaction2});
+    //             console.log('3) addSppoFabRes');
+    //           }
+    //         }
+
+
+    //         if(Garment_Part_CD == 'C') {
+    //           // 4)	SPPO_Collar_Cuff (领袖具体信息)
+    //           let oldCollarCuffData = await ctx.service.sppo.getSppoCollarCuffData(item.customer_fab_code,PPO_ID);
+    //           if(!oldCollarCuffData){
+    //             let master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(item.customer_fab_code); 
+    //             if(!master_collarCuff_data_item){
+    //               errorMsgList[style_no][i] = '生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
+    //               hasError = 1;
+    //               hasItemError = 1;
+    //               throw new Error(errorMsgList[style_no][i]);
+    //             }
+    //             let sppo_collarCuff_data_item = {
+    //               PPO_ID,
+    //               Customer_Fab_Code :   item.customer_fab_code,
+    //               Refer_PPO_Usage   :   master_collarCuff_data_item.Refer_PPO_Usage,
+    //               CC_Type           :   master_collarCuff_data_item.CC_Type,
+    //               CC_Pattern        :   master_collarCuff_data_item.CC_Pattern,
+    //               Size              :   item.collar_cuff_size,
+    //               Finishing         :   master_collarCuff_data_item.Finishing,
+    //               Dye_Method        :   master_collarCuff_data_item.Dye_Method,
+    //               Yarn_Count        :   master_collarCuff_data_item.Yarn_Count,
+    //               Yarn_Strands      :   master_collarCuff_data_item.Yarn_Strands,
+    //               Yarn_Ratio        :   master_collarCuff_data_item.Yarn_Ratio,
+    //               Yarn_Type         :   master_collarCuff_data_item.Yarn_Type,
+    //               CC_Desc           :   master_collarCuff_data_item.CC_Desc,
+    //               CC_Remark         :   master_collarCuff_data_item.CC_Remark,
+    //             }
+    //             let addSppoCollarCuffRes = await ctx.model.SppoCollarCuff.create(sppo_collarCuff_data_item,{transaction:transaction2});
+    //             console.log('4) addSppoCollarCuffRes');
+    //           }
+    //         }
+    //         await transaction2.commit();
+    //       } catch(err){
+    //         await transaction2.rollback();
+    //         errorMsgList[style_no][i] = err.message;
+    //         errorIndex.push(item.idx);
+    //         hasError = 1;
+    //         hasItemError = 1;
+    //         // throw new Error(err.message);
+    //       }
+    //     }
+    //     if(hasItemError){
+    //       // 删表创建了对应PPO_ID的数据
+    //       await ctx.model.SppoColorQtyInfo.destroy({where:{PPO_ID}})
+    //       await ctx.model.SppoGpDelDestinationInfo.destroy({where:{PPO_ID}});
+    //       await ctx.model.SppoCollarCuff.destroy({where:{PPO_ID}});
+    //       throw new Error('添加style_no为'+style_no+' 的相关数据失败。');
+    //     }
+    //     await transaction.commit();
+    //     successStyleNoList.push(style_no);
+    //     // return true
+    //   } catch (e) {
+    //     console.log(e.message)
+    //     errorMsgList[style_no]['all'] = '添加style_no为'+style_no+' 的相关数据失败。';
+    //     errorStyleNoList.push(style_no);
+    //     await transaction.rollback();
+    //     // return false
+    //   }    
+    // }
+    // let returnData={
+    //   msgList : errorMsgList,
+    //   successStyleNoList,
+    //   errorStyleNoList,
+    //   errorIndex
+    // }
+    // return this.jsonReturn(0,returnData);
     
   }
 
-
-  /**
-   * 生成PPO_NO前部分
-   */
-  async buildBasePpoNo(){
-    if(this.basePpoNo){
-      console.log('cache')
-      return this.basePpoNo;
-    }
-    const { ctx, app } = this;   
-    const userData = await this.getUserData();
-    const username = userData.username;
-    const res = await ctx.service.genUsers.getDepartmentIdByUsername(username);
-    if(!res){
-      return false;
-    }
-    let sales_team  = res.DEPARTMENT_ID;
-    let sales_team_code = sales_team.substring(0,1);
-    let year_no = moment().format('YY');
-    let basePpoNo = 'KSF'+year_no+sales_team_code+sales_team;
-    this.basePpoNo = basePpoNo;
-    return basePpoNo;
-  }
 
   /**
    * 编辑
@@ -434,28 +666,17 @@ class SppoController extends BaseController {
 
     let errorMsg = '';
     let hasError = 0;
+    let errorData = {};
     if(!PPO_NO){
-      return this.jsonReturn(-1,'请选择要修改的数据');
+      return this.jsonReturn(-1,{errorData},'请选择要修改的数据');
     }
     
     //验证重复的 Garment_Part Customer_Fab_Code;
-    for(let i in dataList){
-      let row = dataList[i];
-      let Garment_Part = row.Garment_Part;
-      let Customer_Fab_Code = row.Customer_Fab_Code;
-      let otherdRowIndex = dataList.findIndex((item,index)=>{
-        return ( _.trim(item.Garment_Part) == _.trim(Garment_Part) && _.trim(item.Customer_Fab_Code) != Customer_Fab_Code &&  i != index);
-      })
-      if(otherdRowIndex != -1){
-        hasError = 1;
-        errorMsg = '相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交';
-        break;
-      }
+    if(!ctx.service.sppo.check_gp_cfc_same(dataList)){
+      errorData = (ctx.service.sppo.errorData)
+      return this.jsonReturn(-1,{errorData},'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交');
     }
-    if(hasError){
-      return this.jsonReturn(-1,errorMsg);
-    }
-    
+    return false;
 
     //查出旧数据
     let sppoData  = await ctx.service.sppo.getDetail(PPO_NO);
@@ -486,17 +707,21 @@ class SppoController extends BaseController {
         ID:{[Op.ne]:addSppoTitleRes.ID }
       },transaction});
 
-      
-      let sppoGpDelDest_lst_batchData = []; //2)
       let sppoColorQty_lst_batchData = []; //5)
+      let sppoColorQty_hasPush = [];
+      let sppoGpDelDest_lst_batchData = []; //2)
+      let sppoGpDelDest_hasPush = [];
       let sppoFabrication_lst_batchData = []; //3)
+      let sppoFabrication_hasPush = [];
       let sppoCollarCuff_lst_batchData = []; //4)
+      let sppoCollarCuff_hasPush = [];
+
+      let Ship_Mode = sppoData.sppoGpDelDest[0].Ship_Mode;
 
       for(let i in dataList){
         let item = dataList[i];
 
         let Unit = await ctx.service.sppo.getUnitByGP(item.Garment_Part);      
-        let Ship_Mode = sppoData.sppoGpDelDest[i].Ship_Mode;
 
         let masterQtyData = await ctx.service.sppo.getMasterQtyData(item.Garment_Part); //先通过garmaent_part查是body还是领袖
         if(!masterQtyData){
@@ -504,39 +729,50 @@ class SppoController extends BaseController {
         }
         let Garment_Part_CD = masterQtyData.Garment_Part_CD;
 
-
-        /*********** SPPO_GP_Del_Destination_Info ******/
-        // 2) SPPO_GP_Del_Destination_Info
-        let newItem_SppoGpDelDest = {
-          PPO_ID            :PPO_ID_new,
-          Garment_Part      :item.Garment_Part,
-          Customer_Fab_Code :item.Customer_Fab_Code,
-          Delivery          :moment(Delivery).format('YYYY-MM-DD'),
-          Destination,
-          Ship_Mode,
-          Unit,
-          Remark            :item.Remark
-        }
-        sppoGpDelDest_lst_batchData[i] = newItem_SppoGpDelDest;
-
+        let Garment_Part = item.Garment_Part;
+        let Customer_Fab_Code = item.Customer_Fab_Code;
 
         /*********** SPPO_Color_Qty_Info ******/
         // 5) SPPO_Color_Qty_Info
-        let color_combo_no = item.Color_Combo.substring(0,2);
-        let newItem_SppoColorQtyInfo = {
-          PPO_ID:PPO_ID_new,
-          Garment_Part:item.Garment_Part,
-          Customer_Fab_Code:item.Customer_Fab_Code,
-          Color_Combo:item.Color_Combo,
-          Fabric_Code_ESCM: item.Customer_Fab_Code+'_'+color_combo_no,
-          Qty:item.Qty,
-          LD_STD:item.LD_STD,
+        let sppoColorQtyInfo_pkey = 'GP_'+Garment_Part+'_CFC_'+Customer_Fab_Code+'_CC_'+item.Color_Combo;
+        if(!sppoColorQty_hasPush.includes(sppoColorQtyInfo_pkey)){
+          let color_combo_no = item.Color_Combo.substring(0,2);
+          let newItem_SppoColorQtyInfo = {
+            PPO_ID:PPO_ID_new,
+            Garment_Part,
+            Customer_Fab_Code,
+            Color_Combo         :item.Color_Combo,
+            Fabric_Code_ESCM    : item.Customer_Fab_Code+'_'+color_combo_no,
+            Qty                 :item.Qty,
+            LD_STD              :item.LD_STD,
+            Remark              :item.Remark
+          }
+          sppoColorQty_lst_batchData.push(newItem_SppoColorQtyInfo);
+          sppoColorQty_hasPush.push(sppoColorQtyInfo_pkey);
         }
-        sppoColorQty_lst_batchData[i] = newItem_SppoColorQtyInfo;
 
+
+        /*********** SPPO_GP_Del_Destination_Info ******/
+        // 2) SPPO_GP_Del_Destination_Info
+        let sppoGpDelDest_pkey = 'GP_'+Garment_Part+'_CFC_'+Customer_Fab_Code;
+        if(!sppoGpDelDest_hasPush.includes(sppoGpDelDest_pkey)){
+          let newItem_SppoGpDelDest = {
+            PPO_ID            :PPO_ID_new,
+            Garment_Part ,
+            Customer_Fab_Code,
+            Delivery          :moment(Delivery).format('YYYY-MM-DD'),
+            Destination,
+            Ship_Mode,
+            Unit,
+          }
+          sppoGpDelDest_lst_batchData.push(newItem_SppoGpDelDest);
+          sppoGpDelDest_hasPush.push(sppoGpDelDest_pkey);
+        }
+       
         
         /*********** SPPO_Fabrication ******/
-        if(Garment_Part_CD == 'B') {
+        let sppoFabrication_pkey = 'CFC_'+Customer_Fab_Code;
+        if(Garment_Part_CD == 'B' && !sppoFabrication_hasPush.includes(sppoFabrication_pkey)) {
           //3)	SPPO_Fabrication(面料具体信息)
           let master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(item.Customer_Fab_Code); 
 
@@ -546,7 +782,7 @@ class SppoController extends BaseController {
           let newItem_SppoFabrication = {
             // PPO_NO,
             PPO_ID            :   PPO_ID_new,
-            Customer_Fab_Code :   item.Customer_Fab_Code,
+            Customer_Fab_Code,
             Refer_PPO_Usage   :   master_fab_data_item.Refer_PPO_Usage,
             Fab_Type          :   master_fab_data_item.Fab_Type,
             Fab_Pattern       :   master_fab_data_item.Fab_Pattern,
@@ -565,10 +801,12 @@ class SppoController extends BaseController {
             Fab_Remark        :   master_fab_data_item.Fab_Remark,
           }
           sppoFabrication_lst_batchData.push(newItem_SppoFabrication);
+          sppoFabrication_hasPush.push(sppoFabrication_pkey);
         }
         
 
         /*********** SPPO_Collar_Cuff ******/
+        let sppoCollarCuff_pkey = 'CFC_'+Customer_Fab_Code;
         if(Garment_Part_CD == 'C') {
           // 4)	SPPO_Collar_Cuff (领袖具体信息)
           let master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(item.Customer_Fab_Code); 
@@ -577,7 +815,7 @@ class SppoController extends BaseController {
           }
           let newItem_SppoCollarCuff = {
             PPO_ID            :   PPO_ID_new,
-            Customer_Fab_Code :   item.Customer_Fab_Code,
+            Customer_Fab_Code,
             Refer_PPO_Usage   :   master_collarCuff_data_item.Refer_PPO_Usage,
             CC_Type           :   master_collarCuff_data_item.CC_Type,
             CC_Pattern        :   master_collarCuff_data_item.CC_Pattern,
@@ -592,28 +830,30 @@ class SppoController extends BaseController {
             CC_Remark         :   master_collarCuff_data_item.CC_Remark,
           }
           sppoCollarCuff_lst_batchData.push(newItem_SppoCollarCuff);
+          sppoCollarCuff_hasPush.push(sppoCollarCuff_pkey);  
 
         }
 
       }
       console.log('sppoGpDelDest_lst_batchData');
       console.log(sppoGpDelDest_lst_batchData);
-      await ctx.model.SppoGpDelDestinationInfo.bulkCreate(sppoGpDelDest_lst_batchData,{transaction})
       console.log('sppoColorQty_lst_batchData');
       console.log(sppoColorQty_lst_batchData);
-      await ctx.model.SppoColorQtyInfo.bulkCreate(sppoColorQty_lst_batchData,{transaction})
       console.log('sppoFabrication_lst_batchData');
       console.log(sppoFabrication_lst_batchData);
-      await ctx.model.SppoFabrication.bulkCreate(sppoFabrication_lst_batchData,{transaction})
       console.log('sppoCollarCuff_lst_batchData');
       console.log(sppoCollarCuff_lst_batchData);
+
+      await ctx.model.SppoGpDelDestinationInfo.bulkCreate(sppoGpDelDest_lst_batchData,{transaction})
+      await ctx.model.SppoColorQtyInfo.bulkCreate(sppoColorQty_lst_batchData,{transaction})
+      await ctx.model.SppoFabrication.bulkCreate(sppoFabrication_lst_batchData,{transaction})
       await ctx.model.SppoCollarCuff.bulkCreate(sppoCollarCuff_lst_batchData,{transaction})
 
       await transaction.commit();
     } catch(err){
       console.log(err.message)
       await transaction.rollback();
-      return this.jsonReturn(-1,err.message);
+      return this.jsonReturn(-1,{errorData},err.message);
 
     }
 
@@ -773,19 +1013,7 @@ class SppoController extends BaseController {
 
   }
 
-  /**
-   * 创建一个 PPO_NO
-   */
-  async buildPpoNo(){
-    const { ctx, app } = this;   
-    let res = await ctx.model.SppoTitle.buildSerialNo();
-    if(!res){
-      return false;
-    }
-    let SerialNo =  ctx.helper.prefixO(res,5);
-    let basePpoNo = await this.buildBasePpoNo();
-    return basePpoNo+SerialNo;
-  }
+  
 
 
   /**
@@ -803,13 +1031,14 @@ class SppoController extends BaseController {
     data = Object.assign({},res);
     let PPO_ID = data.sppoTitle.PPO_ID;
     data.itemList = []; 
-    data.sppoGpDelDest.forEach((item,index)=>{
+
+    data.sppoColorQty.forEach((item,index)=>{
       let newItem = {};
-      newItem.sppoGpDelDest = item;
-      let sppoColorQty = _.filter(data.sppoColorQty,{PPO_ID,Garment_Part:item.Garment_Part});
-      let sppoFabrication = _.filter(data.sppoFabrication,{PPO_NO,Customer_Fab_Code:item.Customer_Fab_Code});
+      newItem.sppoColorQty = item;
+      let sppoGpDelDest = _.filter(data.sppoColorQty,{PPO_ID,Garment_Part:item.Garment_Part});
+      let sppoFabrication = _.filter(data.sppoFabrication,{PPO_ID,Customer_Fab_Code:item.Customer_Fab_Code});
       let sppoCollarCuff = _.filter(data.sppoCollarCuff,{PPO_ID,Customer_Fab_Code:item.Customer_Fab_Code});
-      newItem.sppoColorQty = sppoColorQty && sppoColorQty.length > 0 ? sppoColorQty[0] : null;
+      newItem.sppoGpDelDest = sppoGpDelDest && sppoGpDelDest.length > 0 ? sppoGpDelDest[0] : null;
       newItem.sppoFabrication = sppoFabrication && sppoFabrication.length > 0 ? sppoFabrication[0]: null;
       newItem.sppoCollarCuff = sppoCollarCuff && sppoCollarCuff.length > 0 ? sppoCollarCuff[0]: null;
       data.itemList.push(newItem);
