@@ -40,12 +40,11 @@ class BaseController extends Controller {
     if(type){
       let uid = app.myData.jwt_decoded.uid;
       let res = await ctx.model.User.findByUid(uid);
+      
       if(res){
-        return {
-          "id":res.id,
-          "username":res.username,
-          "rid":res.rid,
-        }
+        res.roles = res.roles ? res.roles.split(',') : [];
+        res.uid = res.id;
+        return res
       }
     }else{
       if(typeof(app.myData.userBaseData)!='undefined' ){
