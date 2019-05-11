@@ -1,7 +1,23 @@
 const NodeCache = require( "node-cache" );
-const myCache = new NodeCache({ stdTTL: 60*5});
+
 module.exports = {
    
+  /**
+   * 转换字典key的大小写
+   * @param {Object} jsonObj 
+   * @param {Integer} type 当为0时转小写，1时转大写
+   */
+  changeCaseJsonKey(jsonObj,type = 0){
+    for (var key in jsonObj){
+        let nkey =  type ? key.toUpperCase() : key.toLowerCase();
+        jsonObj[nkey] = jsonObj[key];
+        if(nkey != key){
+            delete(jsonObj[key]);
+        }
+    }
+    return jsonObj;
+  },
+
   /**
    * 支持async await 的 forEach方法
    */
@@ -43,7 +59,6 @@ module.exports = {
         return null
       }
     }
-    // return myCache.get(key);
     if(typeof(this.app.myData)!="undefined" && typeof(this.app.myData[key])!="undefined"){
       return this.app.myData[key] ;
     }else{
