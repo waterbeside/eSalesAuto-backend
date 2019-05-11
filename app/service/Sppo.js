@@ -1,6 +1,7 @@
 'use strict';
 
 const moment = require('moment');
+const _ = require('lodash');
 const Service = require('egg').Service;
 class SppoService extends Service {
   
@@ -195,10 +196,78 @@ class SppoService extends Service {
     // })
     return data;
     // return this.jsonReturn(0,data,'success');
-  
-    
   }
 
+
+  
+
+   /**
+   * 生成PPO_NO前部分
+   */
+  async buildBasePpoNo(username){
+    const { ctx, app } = this;   
+    let cacheKey = "sppo:basePpoNo:user_"+username;
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
+    if(cacheData){
+      return cacheData;
+    }
+    const res = await ctx.service.genUsers.getDepartmentIdByUsername(username);
+    if(!res){
+      return false;
+    }
+    let sales_team  = res.DEPARTMENT_ID;
+    let sales_team_code = sales_team.substring(0,1);
+    let year_no = moment().format('YY');
+    let basePpoNo = 'KSF'+year_no+sales_team_code+sales_team;
+    await ctx.helper.setStoreData(cacheKey,basePpoNo,60);
+    return basePpoNo;
+
+  }
+
+
+  /**
+   * 创建一个 PPO_NO
+   */
+  async buildPpoNo(){
+    const { ctx, app } = this;   
+    let res = await ctx.model.SppoTitle.buildSerialNo();
+    if(!res){
+      return false;
+    }
+    let SerialNo =  ctx.helper.prefixO(res,5);
+    let basePpoNo = await this.buildBasePpoNo();
+    return basePpoNo+SerialNo;
+  }
+
+
+  //验证重复的 Garment_Part Customer_Fab_Code;
+  check_gp_cfc_same (dataList){
+    const { ctx, app } = this;   
+    
+    let hasError = 0;
+    this.errorData = typeof(this.errorData) != 'undefined' ? this.errorData : {}
+    this.errorData.errorIndex = [];
+    let list  = dataList.map(el=>{
+      return ctx.helper.changeCaseJsonKey(Object.assign({},el));
+    })
+    for(let i in list){
+      let row = list[i];
+      let garment_part = row.garment_part;
+      let customer_fab_code = row.customer_fab_code;
+      let otherdRowIndex = list.findIndex((item,index)=>{
+        console.log('i:index='+i+':'+index);
+        console.log('garment_part='+garment_part+':'+item.garment_part);
+        console.log('customer_fab_code='+customer_fab_code+':'+item.customer_fab_code);
+        return ( _.trim(item.garment_part) == _.trim(garment_part) && _.trim(item.customer_fab_code) != customer_fab_code &&  i != index);
+      })
+      if(otherdRowIndex != -1){
+        hasError = 1;
+        this.errorData.errorIndex.push(parseInt(i),otherdRowIndex);
+        break;
+      }
+    }
+      return  hasError ? false : true;
+  }
   
 }
 
