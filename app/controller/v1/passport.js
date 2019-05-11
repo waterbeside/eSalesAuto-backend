@@ -12,15 +12,15 @@ class PassportController extends BaseController {
     }
     let username = userData.username;
     let customer_code = await ctx.model.MasterGenUser.findCustomCodeByUserID(username);
-
     let returnData =  {
       "username" : userData.username,
       "uid" : userData.id,
-      "rid" : userData.rid,
-      "roles" : userData.rid == 1 ? ['admin'] : [],
+      "roles" : userData.roles ,
       "sales_team": userData.sales_team,
       "customer_code": customer_code,
     }
+    console.log(returnData);
+
     return this.jsonReturn(0,returnData,'Successful');
 
   }

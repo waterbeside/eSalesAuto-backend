@@ -12,7 +12,7 @@ module.exports = app => {
     },
     username: STRING(255),
     password: STRING(32),
-    rid: INTEGER(2),
+    roles: STRING(32),
     salt: STRING(6),
     sales_team: STRING(20),
   },
