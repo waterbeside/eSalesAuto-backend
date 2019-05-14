@@ -3,7 +3,7 @@
 module.exports = app => {
   const { STRING, INTEGER, DATE } = app.Sequelize;
 
-  const GenBrandLabel = app.model.define('GEN_BRAND_LABEL', {
+  const GenBrandLabel = app.model2.define('GEN_BRAND_LABEL', {
       CUSTOMER_CD: STRING(10),
       BRAND_CD: STRING(4),
       LABEL_CD: STRING(20),
