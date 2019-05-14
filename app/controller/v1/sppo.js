@@ -676,7 +676,6 @@ class SppoController extends BaseController {
       errorData = (ctx.service.sppo.errorData)
       return this.jsonReturn(-1,{errorData},'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交');
     }
-    return false;
 
     //查出旧数据
     let sppoData  = await ctx.service.sppo.getDetail(PPO_NO);
