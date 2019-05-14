@@ -3,7 +3,12 @@
 const BaseService = require('./Base');
 // const Service = require('egg').Service;
 class GenFactoryService extends BaseService {
-  async getFactoryIDList() {
+
+  /**
+   * 查询factory list 
+   * @param {int} type  when type = 1 then for GO
+   */
+  async getFactoryIDList(type = 0) {
     // const connection = await this.app.oracle.getConnection();
     // const res = await connection.execute("SELECT DISTINCT FACTORY_ID FROM GEN_FACTORY FI WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL ORDER BY DECODE(FI.FACTORY_ID,'TDC','1',FI.FACTORY_ID)");
     // connection.close();
@@ -15,12 +20,13 @@ class GenFactoryService extends BaseService {
     // return returnData;
 
     const { ctx , app} = this;
-    let cacheKey = "escm:gen_factorory:factory_id_list";
+    let cacheKey = "escm:gen_factorory:factory_id_list_"+type;
     let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
       return cacheData;
     }
-    let sql = "SELECT DISTINCT FACTORY_ID FROM [escmowner].[GEN_FACTORY] FI WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL"
+    let whereMore = type === 1 ? ' AND FI.FTY_ID_FOR_GO IS NOT NULL' : '';
+    let sql = "SELECT DISTINCT FACTORY_ID FROM [escmowner].[GEN_FACTORY] FI WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL "+whereMore;
     let res = await this.ctx.model2.query(sql);
     let returnData = [];
     res[0].forEach(item=>{
@@ -30,6 +36,44 @@ class GenFactoryService extends BaseService {
     return returnData;
 
   }
+
+  async getFactorysByFtyID(gmt_fty){
+    const { ctx, app } = this;   
+    let cacheKey = "sppo:baseGoNo:fty_"+gmt_fty;
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
+    if(cacheData){
+      return cacheData;
+    }
+    const Op = ctx.model2.Op;
+    let where = {
+      ACTIVE:'Y',
+      INTERNAL_FLAG:'Y',
+      OU:{
+        [Op.ne]: null,
+      },
+      FTY_ID_FOR_GO:{
+        [Op.ne]: null,
+      },
+      FACTORY_ID:gmt_fty
+    }
+    // let order = [['FACTORY_ID','DESC']]
+    const res = await ctx.model2.GenFactory.findOne({where});
+    if(!res){
+      return false;
+    }
+    let resData = res.dataValues;
+
+    // let sql = "SELECT DISTINCT FI.FTY_ID_FOR_GO  FROM [ESCM_EEL].[escmowner].[GEN_FACTORY] FI  WHERE ACTIVE = 'Y' AND INTERNAL_FLAG = 'Y' AND OU IS NOT NULL AND FI.FTY_ID_FOR_GO IS NOT NULL AND FI.FACTORY_ID = '"+gmt_fty+"' "
+    // let res = await this.ctx.model2.query(sql);
+    // let resData = res[0][0];
+    console.log(res);
+    await ctx.helper.setStoreData(cacheKey,resData,60*60*2);
+    return resData;
+
+  }
+
 }
+
+
 
 module.exports = GenFactoryService;
