@@ -5,7 +5,9 @@ const BaseController = require('../Base');
 class GenFactoryController extends BaseController {
   async getFactoryIds() {
     const { ctx ,app} = this;
-    const res = await ctx.service.genFactory.getFactoryIDList();
+    let type = ctx.request.query.type;
+    type = type ? parseInt(type) : 0;
+    const res = await ctx.service.genFactory.getFactoryIDList(type);
     if(res.length == 0){
       return this.jsonReturn(20002,{list:[]},'No data');
     }
