@@ -45,8 +45,8 @@ class SppoController extends BaseController {
 
     //排序
     let order = [
-      // ['Create_Time', 'DESC'],
-      ['PPO_NO', 'DESC'],
+      ['Create_Time', 'ASC'],
+      // ['PPO_NO', 'DESC'],
     ];
     //分页
     let limit = pagesize;
