@@ -882,7 +882,7 @@ class SppoController extends BaseController {
     const username = userData.username;
 
 
-    if(typeof(ppo_nos)!='object' && ppo_nos.length < 1){
+    if(typeof(ppo_nos)!='object' || ppo_nos.length < 1){
       return this.jsonReturn(-1,'请选择要修改的数据')
     }
     // if(ppo_nos.length < 0) 
