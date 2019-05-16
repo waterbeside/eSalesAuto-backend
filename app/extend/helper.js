@@ -42,32 +42,50 @@ module.exports = {
     return (Array(length).join('0')+num).slice(-length); 
   },
 
+  /**
+   * 替换指定位置的字符串
+   * @param {String} str      原字符全
+   * @param {Integer} start   起始位
+   * @param {Number} stop     结束位
+   * @param {String} replacer 
+   */
+  replaceStr(str,start,stop,replacer){ 
+    if(str.substring(start,stop) == replacer){
+      return str;
+    }else{
+      return str.substring(0,start) + replacer + str.substring(stop,str.length); 
+    }
+  },
 
-  
+  /**
+   * 取得缓存
+   * @param {String} key 
+   */  
   async getStoreData(key){
-    if(typeof(this.app.redis)=='object'){
-      const redis = this.app.redis;
-      let caceData = await redis.get(key);
-      if(caceData){
-        let data = JSON.parse(caceData);
-        if(!data){
-          return null;
-        }else{
-          return data;
-        }
-      }else{
-        return null
-      }
-    }
     if(typeof(this.app.myData)!="undefined" && typeof(this.app.myData[key])!="undefined"){
       return this.app.myData[key] ;
     }else{
-      return null;
+      if(typeof(this.app.redis)=='object'){
+        const redis = this.app.redis;
+        let caceData = await redis.get(key);
+        if(caceData){
+          let data = JSON.parse(caceData);
+          if(!data){
+            return null;
+          }else{
+            return data;
+          }
+        }else{
+          return null;
+        }
+      }else{
+        return null;
+      }
     }
   },
 
   async setStoreData(key,value,ex=0){
-    if(typeof(this.app.redis)=='object'){
+    if(typeof(this.app.redis)=='object' && ex > -1){
       const redis = this.app.redis;
       let dataString = JSON.stringify(value);
 
