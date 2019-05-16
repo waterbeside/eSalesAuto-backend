@@ -18,6 +18,7 @@ class PassportController extends BaseController {
       "roles" : userData.roles ,
       "sales_team": userData.sales_team,
       "customer_code": customer_code,
+      'full_name': userData.FullName,
     }
     console.log(returnData);
 

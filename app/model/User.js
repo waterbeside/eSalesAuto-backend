@@ -15,6 +15,7 @@ module.exports = app => {
     roles: STRING(32),
     salt: STRING(6),
     sales_team: STRING(20),
+    FullName:STRING(20),
   },
   {freezeTableName: true,
     timestamps: false,
