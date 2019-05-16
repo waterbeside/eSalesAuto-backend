@@ -10,14 +10,14 @@ class BaseController extends Controller {
    * @param {Array} data 
    * @param {String} msg 
    */
-  jsonReturn(code,data = {},msg = "") {
+  jsonReturn(code,data = null,msg = "",extra=null) {
     const { ctx } = this;
     if(typeof(data)=="string"){
       msg = data;
-      data = {};
+      data = null;
     }
     let now = new Number(new Date().getTime()/1000).toFixed(0)
-    ctx.body = {code,data,msg,date:now};
+    ctx.body = {code,data,msg,date:now,extra};
     return false;
     // process.exit(1);
   }
