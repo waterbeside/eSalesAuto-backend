@@ -36,9 +36,9 @@ module.exports = app => {
   //GO模块
   router.get('/api/v1/go',checktoken(),controller.v1.go.index);  //列表
   router.post('/api/v1/go',checktoken(),controller.v1.go.save);  //新建
-  // router.delete('/api/v1/go',checktoken(),controller.v1.go.del); //删除
+  router.delete('/api/v1/go',checktoken(),controller.v1.go.del); //删除
   // router.get('/api/v1/go/detail',checktoken(),controller.v1.go.detail); //明细
-  // router.put('/api/v1/go/batch',checktoken(),controller.v1.go.batchEdit); //批量编辑
+  router.put('/api/v1/go/batch',checktoken(),controller.v1.go.batchEdit); //批量编辑
   // router.put('/api/v1/go',checktoken(),controller.v1.go.edit); //编辑
   
 
@@ -56,6 +56,10 @@ module.exports = app => {
   //master_fabrication_ln
   router.get('/api/v1/master_fabrication_ln',checktoken(),controller.v1.masterFabricationLN.index);
   router.get('/api/v1/master_fabrication_ln/check_exist',checktoken(),controller.v1.masterFabricationLN.checkExist);
+
+  //master_size 
+  router.get('/api/v1/master_size/sizes',checktoken(),controller.v1.masterSize.getSizes);
+  
 
   
 };
