@@ -11,7 +11,7 @@ class MasterFabricationLNController extends BaseController {
       list,
     };
     if(list.length == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return this.jsonReturn(20002,{list:[]},'No data');
     }
     return this.jsonReturn(0,returnData,'Successful');
   }
