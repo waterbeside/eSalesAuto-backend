@@ -178,7 +178,7 @@ class SppoService extends Service {
     });
 
     data.sppoFabrication = await ctx.model.SppoFabrication.findAll({
-      where:{PPO_NO},
+      where:{PPO_ID},
     });
 
     data.sppoCollarCuff = await ctx.model.SppoCollarCuff.findAll({
