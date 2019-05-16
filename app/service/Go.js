@@ -5,6 +5,38 @@ const _ = require('lodash');
 const Service = require('egg').Service;
 class GoService extends Service {
   
+
+
+  //get sppoDetail
+  async getDetail(go_no){
+    const { ctx, app } = this;   
+    
+    let data = {}
+    data.goTitle = await ctx.model.GoTitle.findOne({
+      where:{GO_NO:go_no,Is_Active:1},
+      order:[['Rev_NO','DESC']]
+    });
+    if(!data.goTitle){
+      return null;
+    }
+    let GO_ID = data.goTitle.GO_ID;
+    let GO_NO = data.goTitle.GO_NO;
+    data.goTitle.setDataValue('Create_Time',moment(data.goTitle.Create_Time).valueOf());
+    data.goTitle.setDataValue('Update_Time',moment(data.goTitle.Update_Time).valueOf());
+
+    data.goLotInfo = await ctx.model.GoLotInfo.findAll({
+      where:{GO_ID},
+    });
+
+    data.goColorQty = await ctx.model.GoColorQty.findAll({
+      where:{GO_ID},
+    });
+
+   
+    return data;
+  }
+
+
   /**
    * 生成GO_NO前部分
    */
@@ -22,9 +54,62 @@ class GoService extends Service {
     let f_Code  = res.FTY_ID_FOR_GO;
     let year_no = moment().format('YY');
     let baseGoNo = 'S' + year_no + f_Code;
-    await ctx.helper.setStoreData(cacheKey,baseGoNo,60);
+    await ctx.helper.setStoreData(cacheKey,baseGoNo,-1);
     return baseGoNo;
+  }
 
+  /**
+   * 转厂后更新GO_NO
+   */
+  async updateGoNo(gmt_fty,GO_NO){
+    const { ctx, app } = this;   
+    const res = await ctx.service.genFactory.getFactorysByFtyID(gmt_fty);
+    if(!res){
+      return false;
+    }
+    let f_Code  = res.FTY_ID_FOR_GO;
+    return ctx.helper.replaceStr(GO_NO,3,4,f_Code);
+  }
+
+  
+
+
+  /**
+   * 生成JO_NO前部分
+   */
+  async buildJoNo(GO_NO,Warehouse,LOT_NO){
+    const { ctx, app } = this;   
+    let go_no_len = GO_NO.length;
+    let go_no_x = GO_NO.substring(1,go_no_len);
+    let res = await this.getMarketByWarehouse(Warehouse);
+    
+    if(!res){
+      return false;
+    }
+    let Market_Quota = res.Market_Quota;
+    let res2 = await ctx.service.genCountry.getCountryByName(Market_Quota);
+
+    if(!res2){
+      return false;
+    }
+    let country_cd = res2.COUNTRY_CD;
+    return go_no_x + country_cd + ctx.helper.prefixO(LOT_NO,2);
+
+  }
+
+  async getMarketByWarehouse(Warehouse){
+    const { ctx, app } = this;   
+    let cacheKey = "master:goMarket:WH_"+Warehouse;
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
+    if(cacheData){
+      return cacheData;
+    }
+    const res = await ctx.model.MasterGoMarket.getOneByWarehouse(Warehouse);
+    if(!res){
+      return false;
+    }
+    await ctx.helper.setStoreData(cacheKey,res,60);
+    return res;
   }
   
 
