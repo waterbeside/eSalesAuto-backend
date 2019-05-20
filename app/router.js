@@ -37,9 +37,9 @@ module.exports = app => {
   router.get('/api/v1/go',checktoken(),controller.v1.go.index);  //列表
   router.post('/api/v1/go',checktoken(),controller.v1.go.save);  //新建
   router.delete('/api/v1/go',checktoken(),controller.v1.go.del); //删除
-  // router.get('/api/v1/go/detail',checktoken(),controller.v1.go.detail); //明细
+  router.get('/api/v1/go/detail',checktoken(),controller.v1.go.detail); //明细
   router.put('/api/v1/go/batch',checktoken(),controller.v1.go.batchEdit); //批量编辑
-  // router.put('/api/v1/go',checktoken(),controller.v1.go.edit); //编辑
+  router.put('/api/v1/go',checktoken(),controller.v1.go.edit); //编辑
   
 
   //brand
@@ -60,6 +60,8 @@ module.exports = app => {
   //master_size 
   router.get('/api/v1/master_size/sizes',checktoken(),controller.v1.masterSize.getSizes);
   
+  //master_go_marekt 
+  router.get('/api/v1/master_go_market',checktoken(),controller.v1.masterGoMarket.index);
 
   
 };
