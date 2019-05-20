@@ -59,6 +59,7 @@ module.exports = app => {
         iss: 'Esquel Sale System',
         uid: userData.id,
         username: userData.username,
+        roles: userData.roles ? userData.roles.split(',') : [],
       }
       var returnData = {
         username : username,
