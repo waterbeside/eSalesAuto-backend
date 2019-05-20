@@ -361,6 +361,169 @@ class GoController extends BaseController {
   }
 
 
+  /**
+   * 编辑
+   */
+  async edit(){
+    const { ctx, app } = this;   
+    const Op = ctx.model.Op;
+
+    let Season = ctx.request.body.season;
+    let OutSource = parseInt(ctx.request.body.outsource);
+    let GMT_FTY = ctx.request.body.gmt_fty;
+    let GO_NO = ctx.request.body.go_no;
+    let Style_No = ctx.request.body.style_no;
+    let FDS_No = ctx.request.body.fds_no;
+    let dataList = ctx.request.body.data;
+
+    const userData = await this.getUserData();
+    const username = userData.username;
+
+    let errorMsg = '';
+    let hasError = 0;
+    let errorData = {};
+    if(!GO_NO){
+      return this.jsonReturn(-1,{errorData},'请选择要修改的数据');
+    }
+
+    if(![1,0].includes(OutSource)){
+      return this.jsonReturn(-1,'OutSource 必须为 Y 或 N')
+    }
+    
+    //查出旧数据
+    let goData  = await ctx.service.go.getDetail(GO_NO);
+    if(!goData){
+      return this.jsonReturn(20002,'数据不存在或已被删除');
+    }
+    let Customer_Code = goData.goTitle.Customer_Code;
+    console.log(Customer_Code);
+    let sizeFields = ['xs','s','m','l','xl','xxl','3xl','4xl','5xl','6xl','7xl','8xl'];
+    let sizeFields_res = await ctx.service.masterSize.getSizesByCustomerCode(Customer_Code);
+    if(sizeFields_res && sizeFields_res.length > 0){
+      sizeFields = sizeFields_res.map(el=>{
+        return el.toLowerCase();
+      })
+    }else{
+      return this.jsonReturn(-1,'customer_code:'+Customer_Code+'查不到尺寸列表');
+    }
+    
+   
+    let goTitleData_old = goData.goTitle;
+    let GO_NO_new = GMT_FTY == goTitleData_old.Factory ? GO_NO : await ctx.service.go.updateGoNo(GMT_FTY,GO_NO);
+    let Rev_NO_new = parseInt(goTitleData_old.Rev_NO)+1;
+    let GO_ID_new = GO_NO_new+'-'+Rev_NO_new;
+
+    let transaction = await this.ctx.model.transaction(); //启用事务
+    try {
+      /*********** GO_title ******/
+      // 1) GO_title
+      
+      let go_title_data_item = Object.assign({},goTitleData_old.dataValues);
+      go_title_data_item.Rev_NO = Rev_NO_new;
+      go_title_data_item.GO_ID = GO_ID_new;
+      go_title_data_item.GO_NO = GO_NO_new;
+      go_title_data_item.OutSource = OutSource;
+      go_title_data_item.Season = Season;
+      go_title_data_item.Factory = GMT_FTY;
+      go_title_data_item.FDS_No = FDS_No;
+      go_title_data_item.Is_Active = 1;
+      go_title_data_item.Last_Updater = username;
+      go_title_data_item.Update_Time = new Date();
+      delete(go_title_data_item.ID)
+      
+      console.log('go_title_data_item');
+      console.log(go_title_data_item);
+      let addGoTitleRes = await ctx.model.GoTitle.create(go_title_data_item,{transaction});
+      await ctx.model.GoTitle.update({Is_Active:0},{where:{
+        Style_No: Style_No,
+        ID:{[Op.ne]:addGoTitleRes.ID }
+      },transaction});
+
+
+      let goLotInfo_LotNo = 1;       
+      let JO_NO_List = {};       
+      let goLotInfo_lst_batchData = []; //2)
+      let goLotInfo_hasPush = [];
+      let goColorQty_lst_batchData = []; //3)
+      let goColorQty_hasPush = [];
+
+      for(let i in dataList){
+        let item = dataList[i];
+        let BPO_Date = item.bpo_date;
+        let BPO_NO = item.bpo_no;
+        let Warehouse = item.warehouse;
+        
+        errorData[i] = {};
+        /*********** GO_Lot_Info ******/
+        let goLotInfo_pkey = 'DATE_'+BPO_Date+'_NO_'+BPO_NO;
+        let JO_NO = '';
+        if(typeof(JO_NO_List[goLotInfo_pkey])!="undefined" ){
+          JO_NO = JO_NO_List[goLotInfo_pkey]
+        }else{
+          JO_NO = await ctx.service.go.buildJoNo(GO_NO_new,Warehouse,goLotInfo_LotNo);
+          JO_NO_List[goLotInfo_pkey] = JO_NO;
+        }
+        if(!JO_NO){
+          let errorMsg = '"'+Warehouse+'": 创建JO_NO失败。 ';
+          errorData['all'] = {warehouse:errorMsg}
+          throw new Error(errorMsg);
+        }
+        
+        if(!goLotInfo_hasPush.includes(goLotInfo_pkey)){
+          let newItem_goLotInfo = {
+            GO_ID     : GO_ID_new,
+            LOT_NO    :goLotInfo_LotNo,
+            JO_NO,
+            BPO_NO,
+            BPO_Date,
+            PPC_Date  :BPO_Date  ,
+            Warehouse  ,
+          }
+          goLotInfo_lst_batchData.push(newItem_goLotInfo);
+          goLotInfo_hasPush.push(goLotInfo_pkey);
+          goLotInfo_LotNo += 1;
+        }
+
+
+        /*********** GO_Color_Qty ******/
+        for(let si in sizeFields){
+          let Size = sizeFields[si];
+ 
+          let goColorQty_pkey = 'JO_NO_'+JO_NO+'_SIZE_'+Size+'COMBO'+item.combo;
+          if(!goColorQty_hasPush.includes(goColorQty_pkey) && typeof(item.sizes[Size]) !='undefined' && item.sizes[Size] > 0){
+            let newItem_goColorQty= {
+              JO_NO,
+              Color_Combo    : item.combo,
+              Color_Code     : item.combo.substring(0,2),
+              Size           : Size.toUpperCase(),
+              Qty            : item.sizes[Size],
+              GO_ID         : GO_ID_new,
+            }
+            goColorQty_lst_batchData.push(newItem_goColorQty);
+            goColorQty_hasPush.push(goColorQty_pkey);
+            
+          }
+        }
+      
+      }
+      
+      console.log('goLotInfo_lst_batchData');
+      console.log(goLotInfo_lst_batchData);
+      console.log('goColorQty_lst_batchData');
+      console.log(goColorQty_lst_batchData);
+      await ctx.model.GoLotInfo.bulkCreate(goLotInfo_lst_batchData,{transaction})
+      await ctx.model.GoColorQty.bulkCreate(goColorQty_lst_batchData,{transaction})
+      await transaction.commit();   
+    } catch (error) {
+      await transaction.rollback();
+      return this.jsonReturn(-1,errorData,error.message);
+    }
+    return this.jsonReturn(0,'Successfully');
+
+
+  }
+
+
 
   /**
    * 批量编辑
@@ -515,6 +678,48 @@ class GoController extends BaseController {
 
   }
 
+
+
+  /**
+   * 详情
+   */
+  async detail(){
+    const { ctx, app } = this;   
+    let GO_NO = ctx.request.query.go_no;
+    
+    let data = {}
+    let res  = await ctx.service.go.getDetail(GO_NO);
+    if(!res){
+      return this.jsonReturn(20002,'NO Data');
+    }
+    data = Object.assign({},res);
+    let GO_ID = data.goTitle.GO_ID;
+    let Customer_Code = data.goTitle.Customer_Code
+    data.itemList = []; 
+    data.size_fields = await ctx.service.masterSize.getSizesByCustomerCode(Customer_Code);
+
+    var goColorQty_groupList = _.groupBy(data.goColorQty, function (el) { return el.JO_NO+"_"+el.Color_Code; });
+    for(let k in goColorQty_groupList){
+      let k_arr = k.split('_');
+      let JO_NO = k_arr[0];
+      let Color_Code = k_arr[1];
+      let itemList = goColorQty_groupList[k];
+      let newItem = {};
+      newItem.JO_NO = JO_NO;
+      newItem.Color_Code = Color_Code;
+      newItem.Color_Combo = itemList[0].Color_Combo;
+      newItem.colorQtyList = itemList;
+      let goLotInfo = _.filter(data.goLotInfo,{GO_ID,JO_NO});
+      newItem.goLotInfo = goLotInfo && goLotInfo.length > 0 ? goLotInfo[0] : null;
+
+      data.itemList.push(newItem);
+    }
+
+    
+
+    return this.jsonReturn(0,data,'success');
+    
+  }
 
 
   /**
