@@ -29,6 +29,7 @@ module.exports = app => {
   router.post('/api/v1/sppo',checktoken(),controller.v1.sppo.save);  //新建
   router.delete('/api/v1/sppo',checktoken(),controller.v1.sppo.del); //删除
   router.get('/api/v1/sppo/check_customer_fab_code_exist',checktoken(),controller.v1.sppo.checkCustomerFabCodeExist);
+  router.get('/api/v1/sppo/get_customer_fab_codes',checktoken(),controller.v1.sppo.getCustomerFabCodes);
   router.get('/api/v1/sppo/detail',checktoken(),controller.v1.sppo.detail); //明细
   router.put('/api/v1/sppo/batch',checktoken(),controller.v1.sppo.batchEdit); //批量编辑
   router.put('/api/v1/sppo',checktoken(),controller.v1.sppo.edit); //编辑
@@ -54,7 +55,7 @@ module.exports = app => {
   router.get('/api/v1/fab_fabric_type/check_exist',checktoken(),controller.v1.fabFabricType.checkExist);
 
   //master_fabrication_ln
-  router.get('/api/v1/master_fabrication_ln',checktoken(),controller.v1.masterFabricationLN.index);
+  router.get('/api/v1/master_fabrication_ln/get_customer_fab_codes',checktoken(),controller.v1.masterFabricationLN.getCustomerFabCodes);
   router.get('/api/v1/master_fabrication_ln/check_exist',checktoken(),controller.v1.masterFabricationLN.checkExist);
 
   //master_size 
@@ -63,5 +64,8 @@ module.exports = app => {
   //master_go_marekt 
   router.get('/api/v1/master_go_market',checktoken(),controller.v1.masterGoMarket.index);
 
+  //master_qty_ld
+  router.get('/api/v1/master_qty_ld/get_garment_parts',checktoken(),controller.v1.masterQtyLd.getGarmentParts);
+  
   
 };

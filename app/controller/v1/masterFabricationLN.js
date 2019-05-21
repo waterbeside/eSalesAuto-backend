@@ -17,6 +17,34 @@ class MasterFabricationLNController extends BaseController {
   }
 
 
+  async getCustomerFabCodes(){
+    const { ctx, app } = this;    
+    let cacheKey = "master:fabricationLN:customer_fab_codes";
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
+    if(cacheData){
+      return cacheData;
+    }
+
+    let list = [];
+    let res = await ctx.model.MasterFabricationLN.findAll(
+      {
+        group: ['Customer_Fab_Code'],
+        attributes:['Customer_Fab_Code']
+      }
+    );
+    res.forEach(element => {
+      list.push(res.Customer_Fab_Code);
+    });
+
+    if(list.length > 0){
+      await ctx.helper.setStoreData(cacheKey,list,60*60*24);
+    }
+
+    return this.jsonReturn(0,{list},'Successfully');
+
+  }
+
+
   async checkExist() {
     const { ctx } = this;
     let Customer_Fab_Code = ctx.request.query.customer_fab_code;

@@ -94,7 +94,54 @@ class SppoController extends BaseController {
     return this.jsonReturn(0,{is_exist:res},'Successfully');
   }
 
- 
+  /**
+   *  取得customer_fab_code列表
+   */
+  async getCustomerFabCodes(){
+    const { ctx, app } = this;    
+    let cacheKey = "sppo:customer_fab_codes";
+    let cacheData = await ctx.helper.getStoreData(cacheKey);
+    if(cacheData){
+      return cacheData;
+    }
+
+    let list = [];
+    let res = await ctx.model.MasterFabricationLN.findAll({
+        group: ['Customer_Fab_Code'],
+        attributes:['Customer_Fab_Code']
+    });
+    console.log(res)
+    res.forEach(element => {
+      let item = {
+        customer_fab_code: element.Customer_Fab_Code,
+        from:'fabrication'
+      }
+      list.push(item);
+    });
+
+
+    res = await ctx.model.MasterCollarCuffLN.findAll({
+        group: ['Customer_Fab_Code'],
+        attributes:['Customer_Fab_Code']
+    });
+    res.forEach(element => {
+      let item = {
+        customer_fab_code: element.Customer_Fab_Code,
+        from:'collar_cuff'
+      }
+      list.push(item);
+    });
+
+
+    if(list.length > 0){
+      await ctx.helper.setStoreData(cacheKey,list,60*60*24);
+    }
+
+    return this.jsonReturn(0,{list},'Successfully');
+
+  }
+
+
 
   /**
    * 添加SPPO
