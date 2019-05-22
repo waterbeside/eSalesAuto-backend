@@ -9,7 +9,7 @@ class MasterQtyLdController extends BaseController {
     let cacheKey = "master:garment_parts";
     let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
-      return cacheData;
+      return this.jsonReturn(0,{list:cacheData},'Successfully');
     }
 
     let list = [];

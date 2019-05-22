@@ -22,7 +22,7 @@ class MasterFabricationLNController extends BaseController {
     let cacheKey = "master:fabricationLN:customer_fab_codes";
     let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
-      return cacheData;
+      return this.jsonReturn(0,{list:cacheData},'Successfully');
     }
 
     let list = [];
@@ -32,8 +32,8 @@ class MasterFabricationLNController extends BaseController {
         attributes:['Customer_Fab_Code']
       }
     );
-    res.forEach(element => {
-      list.push(res.Customer_Fab_Code);
+    res.forEach(item => {
+      list.push(item.Customer_Fab_Code);
     });
 
     if(list.length > 0){
