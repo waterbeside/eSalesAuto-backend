@@ -41,7 +41,18 @@ module.exports = app => {
   router.get('/api/v1/go/detail',checktoken(),controller.v1.go.detail); //明细
   router.put('/api/v1/go/batch',checktoken(),controller.v1.go.batchEdit); //批量编辑
   router.put('/api/v1/go',checktoken(),controller.v1.go.edit); //编辑
+
+  //User模块
+  router.get('/api/v1/user',checktoken(),controller.v1.user.index);  //列表
+  // router.post('/api/v1/user',checktoken(),controller.v1.user.save);  //新建
+  // router.delete('/api/v1/user',checktoken(),controller.v1.user.del); //删除
+  router.get('/api/v1/user/:id',checktoken(),controller.v1.user.detail); //明细
+  // router.put('/api/v1/user/:id',checktoken(),controller.v1.user.edit); //编辑
+
+  //Role模块
+  router.get('/api/v1/role/selects',checktoken(),controller.v1.role.selects);  //列表
   
+
 
   //brand
   router.get('/api/v1/gen_brand/get_brand_code',checktoken(),controller.v1.genBrand.getBrandCode);
