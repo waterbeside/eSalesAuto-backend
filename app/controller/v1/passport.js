@@ -39,6 +39,10 @@ class PassportController extends BaseController {
       var errorMsg  = ctx.model.User.errorMsg ? ctx.model.User.errorMsg : '登入失败';
       return this.jsonReturn(errorCode,errorMsg);
     }
+    await ctx.model.User.update(
+      {last_login_time:new Date()},
+      {where:{ id: res.uid }}
+    );
     return this.jsonReturn(0,res,'Successful');
 
   }
