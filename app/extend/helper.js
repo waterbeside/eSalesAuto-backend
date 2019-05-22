@@ -61,7 +61,8 @@ module.exports = {
    * 取得缓存
    * @param {String} key 
    */  
-  async getStoreData(key){
+  async getStoreData(key,prefix="autoSale"){
+    key = prefix ? prefix+':'+ key : key;
     if(typeof(this.app.myData)!="undefined" && typeof(this.app.myData[key])!="undefined"){
       return this.app.myData[key] ;
     }else{
@@ -84,11 +85,11 @@ module.exports = {
     }
   },
 
-  async setStoreData(key,value,ex=0){
+  async setStoreData(key,value,ex=0,prefix="autoSale"){
+    key = prefix ? prefix+':'+ key : key;
     if(typeof(this.app.redis)=='object' && ex > -1){
       const redis = this.app.redis;
       let dataString = JSON.stringify(value);
-
       if(ex > 0){
         await redis.setex(key,ex,dataString);
       }else{
