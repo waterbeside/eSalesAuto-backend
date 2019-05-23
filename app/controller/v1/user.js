@@ -51,14 +51,14 @@ class UserController extends BaseController {
     let pagination = this.pagination({total,page,pagesize});
     let offset = pagination.offset;
     if(total == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     //查询
     let res = await ctx.model.User.findAll({where,order,offset,limit,attributes});
    
     // // console.log(res)
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     
     let list = res.map((item,index) => {
@@ -72,26 +72,77 @@ class UserController extends BaseController {
       list,
       pagination
     };
-    return this.jsonReturn(0,returnData,'Successfully');
+    return ctx.jsonReturn(0,returnData,'Successfully');
   }
 
 
   /**
    * 明细
    */
-  async detail(){
-    const { ctx, app } = this;    
+  async show(){
+    const { ctx, app } = this;
     let id = parseInt(ctx.params.id);
     if(id < 1){
-      return this.jsonReturn(992,{},'Lost ID');
+      return ctx.jsonReturn(992,{},'Lost ID');
     }
-    let attributes = ['id','username','status','roles','sales_team','FullName','create_time','last_login_time']
+    let attributes = ['id','username','status','roles','sales_team','FullName','create_time','last_login_time','email']
     let where = {id,is_delete:0}
     let res  = await ctx.model.User.findOne({
       where,attributes
     })
-    return this.jsonReturn(0,res,'Successfully');
+    return ctx.jsonReturn(0,res,'Successfully');
+  }
 
+  /**
+   * 新增用户
+   */
+  async create(){
+    const { ctx, app } = this;
+    console.log(ctx.request.body)
+
+
+  }
+
+  /**
+   * 修改用户
+   */
+  async update(){
+    const { ctx, app } = this;
+    let id = parseInt(ctx.params.id);
+    let data = ctx.request.body;
+
+    if(!id){
+      return ctx.jsonReturn(992,null,'Error id');
+    }
+
+
+
+  }
+
+  /**
+   * 删除用户
+   */
+  async destroy(){
+    const { ctx, app } = this;
+
+  }
+
+
+
+  
+
+  /**
+   * 验证用户名是否重复
+   */
+  async checkUnique(){
+    const { ctx, app } = this;    
+    let id = ctx.request.query.id ||  ctx.request.body.id || 0;
+    let username = ctx.request.query.username ||  ctx.request.body.username;
+    if(!username){
+      return ctx.jsonReturn(992,null,'参数有误');
+    }
+    let res = await ctx.model.User.checkUnique(username,id);
+    return ctx.jsonReturn(0,{isUnique:res},'Successfully');
   }
 
 }

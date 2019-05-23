@@ -18,6 +18,7 @@ module.exports = app => {
     salt: STRING(6),
     sales_team: STRING(20),
     FullName:STRING(20),
+    email:STRING(255),
     last_login_time: {
       type:DATE,
       get (){
@@ -103,6 +104,31 @@ module.exports = app => {
     }
     let hash_2 = hash_1 + "" + salt;
     return crypto.createHash('md5').update(hash_2).digest('hex');
+  }
+
+  /**
+   * 检验用户名唯一
+   */
+  User.checkUnique = async function(username,exclude_id){
+    const Op = app.Sequelize.Op;
+    let where = {
+      username,
+      is_delete:0,
+    }
+    if(exclude_id){
+      where.id = {
+        [Op.ne]: exclude_id,
+      }
+    }
+    let cnt = await this.count({where});
+    console.log('cnt')
+    console.log(cnt)
+    if(cnt>0){
+      return false;
+    }else{
+      return true;
+    }
+    
   }
 
   return User;
