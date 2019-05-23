@@ -18,22 +18,6 @@ module.exports = {
     return jsonObj;
   },
 
-  /**
-   * 支持async await 的 forEach方法
-   */
-  async  asyncForEach(arr, callback){
-    const length = arr.length;
-    const O = Object(arr);
-    let k = 0;
-    while (k < length) {
-      if (k in O) {
-        console.log('doing foreach...');
-        const kValue = O[k];
-        await callback(kValue, k, O);
-      }
-      k++;
-    }
-  },
 
   /** 
    * 数字位数补全
@@ -104,4 +88,48 @@ module.exports = {
     
     return;
   },
+
+
+  /** 
+   * 验证工具
+   */
+  validate : {
+    isNoSpaces(str){
+      if(str.indexOf(" ") >=0){
+        return false;
+      }
+      return true;
+    },
+    
+    isNoSpecialBut_(str){
+      const reg =  /^[a-zA-Z0-9_]{1,}$/
+      console.log(str)
+      return reg.test(str)
+    },
+    
+    isURL(url) {
+      const reg = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/
+      return reg.test(url)
+    },
+    
+    isLowerCase(str) {
+      const reg = /^[a-z]+$/
+      return reg.test(str)
+    },
+    
+    isUpperCase(str) {
+      const reg = /^[A-Z]+$/
+      return reg.test(str)
+    },
+    
+    isAlphabets(str){
+      const reg = /^[A-Za-z]+$/
+      return reg.test(str)
+    },
+    
+    isEmail(email) {
+      const reg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      return reg.test(email)
+    }
+  }
 };
