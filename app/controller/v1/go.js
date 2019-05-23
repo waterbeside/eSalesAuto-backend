@@ -429,7 +429,7 @@ class GoController extends BaseController {
       go_title_data_item.Is_Active = 1;
       go_title_data_item.Last_Updater = username;
       go_title_data_item.Update_Time = new Date();
-      delete(go_title_data_item.ID)
+      delete(go_title_data_item.ID);
       
       console.log('go_title_data_item');
       console.log(go_title_data_item);

@@ -181,21 +181,6 @@ class SppoController extends BaseController {
       return ctx.jsonReturn(992,'请选择 Garment Fty');
     }
 
-    
-
-    // console.log(ctx.helper.asyncForEach)
-    /****** test result  */
-    // let returnData= {
-    //   msgList : errorMsgList,
-    //   successStyleNoList:['BB2001548'],
-    //   errorStyleNoList:['BB2001560'],
-    //   errorIndex
-    // }
-    // return ctx.jsonReturn(0,returnData);
-    // console.log(data);return false;
-
-
-
     //查找所有style_no
     let style_no_kv_list = _.groupBy(data,'style_no');
     let style_no_array = [];
