@@ -14,7 +14,7 @@ class RoleController extends BaseController {
   async selects() {
     const {ctx, app} = this;
     let list = await ctx.service.role.getSelects();
-    return this.jsonReturn(0,{list},'Successfully');
+    return ctx.jsonReturn(0,{list},'Successfully');
   }
 
 }

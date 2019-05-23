@@ -9,7 +9,7 @@ class GenWashTypeController extends BaseController {
     let garment_wash = ctx.request.query.garment_wash;
     garment_wash = garment_wash ? garment_wash :wash_type ;
     const res = await ctx.service.genWashType.checkExistByWashType(garment_wash);
-    return this.jsonReturn(0,{is_exist:res},'Successfully');
+    return ctx.jsonReturn(0,{is_exist:res},'Successfully');
   }
 
 
@@ -18,9 +18,9 @@ class GenWashTypeController extends BaseController {
     
     const res = await ctx.service.genWashType.washTypeList();
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[]},'No data');
+      return ctx.jsonReturn(20002,{list:[]},'No data');
     }
-    return this.jsonReturn(0,{list:res},'Successfully');
+    return ctx.jsonReturn(0,{list:res},'Successfully');
 
   }
 

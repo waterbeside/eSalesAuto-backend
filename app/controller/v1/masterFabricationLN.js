@@ -11,9 +11,9 @@ class MasterFabricationLNController extends BaseController {
       list,
     };
     if(list.length == 0){
-      return this.jsonReturn(20002,{list:[]},'No data');
+      return ctx.jsonReturn(20002,{list:[]},'No data');
     }
-    return this.jsonReturn(0,returnData,'Successful');
+    return ctx.jsonReturn(0,returnData,'Successful');
   }
 
 
@@ -22,7 +22,7 @@ class MasterFabricationLNController extends BaseController {
     let cacheKey = "master:fabricationLN:customer_fab_codes";
     let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
-      return this.jsonReturn(0,{list:cacheData},'Successfully');
+      return ctx.jsonReturn(0,{list:cacheData},'Successfully');
     }
 
     let list = [];
@@ -40,7 +40,7 @@ class MasterFabricationLNController extends BaseController {
       await ctx.helper.setStoreData(cacheKey,list,60*60*24);
     }
 
-    return this.jsonReturn(0,{list},'Successfully');
+    return ctx.jsonReturn(0,{list},'Successfully');
 
   }
 
@@ -52,7 +52,7 @@ class MasterFabricationLNController extends BaseController {
       Customer_Fab_Code
     }
     const res = await ctx.model.MasterFabricationLN.count({where});
-    return this.jsonReturn(0,{is_exist:res},'Successfully');
+    return ctx.jsonReturn(0,{is_exist:res},'Successfully');
   }
 }
 module.exports = MasterFabricationLNController;

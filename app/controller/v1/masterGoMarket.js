@@ -10,14 +10,14 @@ class MasterGoMarketController extends BaseController {
     let cacheKey = "master:goMarket:list";
     let cacheData = await ctx.helper.getStoreData(cacheKey);
     if(cacheData){
-      return this.jsonReturn(0,{list:cacheData},'Successfully');;
+      return ctx.jsonReturn(0,{list:cacheData},'Successfully');;
     }
     const res = await ctx.model.MasterGoMarket.findAll();
     if(!res){
-      return this.jsonReturn(20002,{list:[]},'No data');
+      return ctx.jsonReturn(20002,{list:[]},'No data');
     }
     await ctx.helper.setStoreData(cacheKey,res,60*60);
-    return this.jsonReturn(0,{list:res},'Successfully');;
+    return ctx.jsonReturn(0,{list:res},'Successfully');;
   }
 
 }

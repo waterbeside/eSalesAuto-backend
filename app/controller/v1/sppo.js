@@ -54,14 +54,14 @@ class SppoController extends BaseController {
     let pagination = this.pagination({total,page,pagesize});
     let offset = pagination.offset;
     if(total == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     //查询
     let res = await ctx.model.SppoTitle.findAll({where,order,offset,limit});
    
     // // console.log(res)
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     
     let list = res.map((item,index) => {
@@ -75,7 +75,7 @@ class SppoController extends BaseController {
       list,
       pagination
     };
-    return this.jsonReturn(0,returnData,'Successful');
+    return ctx.jsonReturn(0,returnData,'Successful');
   }
 
   /**
@@ -91,7 +91,7 @@ class SppoController extends BaseController {
     if(!res){
       res = await ctx.model.MasterCollarCuffLN.count({where});
     }
-    return this.jsonReturn(0,{is_exist:res},'Successfully');
+    return ctx.jsonReturn(0,{is_exist:res},'Successfully');
   }
 
   /**
@@ -137,7 +137,7 @@ class SppoController extends BaseController {
       await ctx.helper.setStoreData(cacheKey,list,60*60*24);
     }
 
-    return this.jsonReturn(0,{list},'Successfully');
+    return ctx.jsonReturn(0,{list},'Successfully');
 
   }
 
@@ -169,16 +169,16 @@ class SppoController extends BaseController {
     // console.log(garment_fty)
 
     if(typeof(data)!="object"){
-      return this.jsonReturn(992,"请上传数据");
+      return ctx.jsonReturn(992,"请上传数据");
     }
     if(!customer_code){
-      return this.jsonReturn(992,'请选择 Customer code');
+      return ctx.jsonReturn(992,'请选择 Customer code');
     }
     if(!brand){
-      return this.jsonReturn(992,'请选择 Brand');
+      return ctx.jsonReturn(992,'请选择 Brand');
     }
     if(!garment_fty){
-      return this.jsonReturn(992,'请选择 Garment Fty');
+      return ctx.jsonReturn(992,'请选择 Garment Fty');
     }
 
     
@@ -191,7 +191,7 @@ class SppoController extends BaseController {
     //   errorStyleNoList:['BB2001560'],
     //   errorIndex
     // }
-    // return this.jsonReturn(0,returnData);
+    // return ctx.jsonReturn(0,returnData);
     // console.log(data);return false;
 
 
@@ -221,7 +221,7 @@ class SppoController extends BaseController {
       sppoTitleData_list_old[style_no] = oldTitleItemData; 
     }
     if(hasError){
-      return this.jsonReturn(-1,errMsg);
+      return ctx.jsonReturn(-1,errMsg);
     }
 
   
@@ -448,14 +448,14 @@ class SppoController extends BaseController {
       console.log(err.message)
       await transaction.rollback();
       
-      return this.jsonReturn(-1,err.message);
+      return ctx.jsonReturn(-1,err.message);
 
     }
     let returnData={
       // msgList : errorMsgList,
       errorStyleNoList,
     }
-    return this.jsonReturn(0,returnData);
+    return ctx.jsonReturn(0,returnData);
 
 
 
@@ -492,7 +492,7 @@ class SppoController extends BaseController {
     //         hasError = 1;
     //         throw new Error(errorMsgList[style_no]['all']);
     //         // continue;
-    //         // return this.jsonReturn(-1,'流水号创建失败');
+    //         // return ctx.jsonReturn(-1,'流水号创建失败');
     //       }
     //       // 取得或生成 PPO_NO
     //       PPO_NO = basePpoNo + ctx.helper.prefixO(Serial_NO,5)
@@ -689,7 +689,7 @@ class SppoController extends BaseController {
     //   errorStyleNoList,
     //   errorIndex
     // }
-    // return this.jsonReturn(0,returnData);
+    // return ctx.jsonReturn(0,returnData);
     
   }
 
@@ -715,19 +715,19 @@ class SppoController extends BaseController {
     let hasError = 0;
     let errorData = {};
     if(!PPO_NO){
-      return this.jsonReturn(-1,{errorData},'请选择要修改的数据');
+      return ctx.jsonReturn(-1,{errorData},'请选择要修改的数据');
     }
     
     //验证重复的 Garment_Part Customer_Fab_Code;
     if(!ctx.service.sppo.check_gp_cfc_same(dataList)){
       errorData = (ctx.service.sppo.errorData)
-      return this.jsonReturn(-1,{errorData},'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交');
+      return ctx.jsonReturn(-1,{errorData},'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交');
     }
 
     //查出旧数据
     let sppoData  = await ctx.service.sppo.getDetail(PPO_NO);
     if(!sppoData){
-      return this.jsonReturn(20002,'数据不存在或已被删除');
+      return ctx.jsonReturn(20002,'数据不存在或已被删除');
     }
     let transaction = await this.ctx.model.transaction(); //启用事务
     try{
@@ -899,12 +899,12 @@ class SppoController extends BaseController {
     } catch(err){
       console.log(err.message)
       await transaction.rollback();
-      return this.jsonReturn(-1,{errorData},err.message);
+      return ctx.jsonReturn(-1,{errorData},err.message);
 
     }
 
 
-    return this.jsonReturn(0,'Successfully');
+    return ctx.jsonReturn(0,'Successfully');
     
   }
 
@@ -930,7 +930,7 @@ class SppoController extends BaseController {
 
 
     if(typeof(ppo_nos)!='object' || ppo_nos.length < 1){
-      return this.jsonReturn(-1,'请选择要修改的数据')
+      return ctx.jsonReturn(-1,'请选择要修改的数据')
     }
     // if(ppo_nos.length < 0) 
     // console.log(typeof(ppo_nos))
@@ -948,7 +948,7 @@ class SppoController extends BaseController {
       sppoDataList[PPO_NO] = sppoData;
     }
     if(hasError){
-      return this.jsonReturn(-1,errorMsg)
+      return ctx.jsonReturn(-1,errorMsg)
     }
     let transaction = await this.ctx.model.transaction(); //启用事务
     try{
@@ -1051,9 +1051,9 @@ class SppoController extends BaseController {
       await transaction.rollback();
     }
     if(hasError){
-      return this.jsonReturn(-1,'Failed');
+      return ctx.jsonReturn(-1,'Failed');
     }else{
-      return this.jsonReturn(0,'Successfully');
+      return ctx.jsonReturn(0,'Successfully');
     }
     
 
@@ -1072,7 +1072,7 @@ class SppoController extends BaseController {
     let data = {}
     let res  = await ctx.service.sppo.getDetail(PPO_NO);
     if(!res){
-      return this.jsonReturn(20002,{},'NO Data');
+      return ctx.jsonReturn(20002,{},'NO Data');
     }
     data = Object.assign({},res);
     let PPO_ID = data.sppoTitle.PPO_ID;
@@ -1090,7 +1090,7 @@ class SppoController extends BaseController {
       data.itemList.push(newItem);
     })
 
-    return this.jsonReturn(0,data,'success');
+    return ctx.jsonReturn(0,data,'success');
     
   }
   
@@ -1105,7 +1105,7 @@ class SppoController extends BaseController {
     let ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
 
     if(!ids){
-      return this.jsonReturn(-1,"请选择要删除的数据");
+      return ctx.jsonReturn(-1,"请选择要删除的数据");
     }
     const userData = await this.getUserData();
     const username = userData.username;
@@ -1122,15 +1122,15 @@ class SppoController extends BaseController {
     }
     let list = await ctx.model.SppoTitle.findAll({where});
     if(list.length === 0){
-      return this.jsonReturn(-1,'你不能删除不是自己发布的内容');
+      return ctx.jsonReturn(-1,'你不能删除不是自己发布的内容');
     }
 
     where.Is_Active = 1;
     let res = await ctx.model.SppoTitle.update({Is_Active:0},{where});
     if(res && res[0]>0){
-      return this.jsonReturn(0,'Successfully');
+      return ctx.jsonReturn(0,'Successfully');
     }else{
-      return this.jsonReturn(-1,'Failed');
+      return ctx.jsonReturn(-1,'Failed');
 
     }
     

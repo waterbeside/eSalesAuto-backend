@@ -54,14 +54,14 @@ class GoController extends BaseController {
     let pagination = this.pagination({total,page,pagesize});
     let offset = pagination.offset;
     if(total == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     //查询
     let res = await ctx.model.GoTitle.findAll({where,order,offset,limit});
    
     // // console.log(res)
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[],pagination},'No data');
+      return ctx.jsonReturn(20002,{list:[],pagination},'No data');
     }
     
     let list = res.map((item,index) => {
@@ -75,7 +75,7 @@ class GoController extends BaseController {
       list,
       pagination
     };
-    return this.jsonReturn(0,returnData,'Successful');
+    return ctx.jsonReturn(0,returnData,'Successful');
   }
 
 
@@ -106,13 +106,13 @@ class GoController extends BaseController {
     // console.log(brand)
 
     if(typeof(data)!="object"){
-      return this.jsonReturn(992,"请上传数据");
+      return ctx.jsonReturn(992,"请上传数据");
     }
     if(!customer_code){
-      return this.jsonReturn(992,'请选择 Customer code');
+      return ctx.jsonReturn(992,'请选择 Customer code');
     }
     if(!brand){
-      return this.jsonReturn(992,'请选择 Brand');
+      return ctx.jsonReturn(992,'请选择 Brand');
     }
 
     let sizeFields = ['xs','s','m','l','xl','xxl','3xl','4xl','5xl','6xl','7xl','8xl'];
@@ -122,7 +122,7 @@ class GoController extends BaseController {
         return el.toLowerCase();
       })
     }else{
-      return this.jsonReturn(-1,'customer_code:'+customer_code+'查不到尺寸列表');
+      return ctx.jsonReturn(-1,'customer_code:'+customer_code+'查不到尺寸列表');
     }
    
     for(let i in data){
@@ -142,7 +142,7 @@ class GoController extends BaseController {
       }
     }
     if(hasError){
-      return this.jsonReturn(-1,errMsg);
+      return ctx.jsonReturn(-1,errMsg);
     }
 
 
@@ -182,7 +182,7 @@ class GoController extends BaseController {
       };
     }
     if(hasError){
-      return this.jsonReturn(-1,errMsg);
+      return ctx.jsonReturn(-1,errMsg);
     }
 
     let transaction = await this.ctx.model.transaction(); //启用事务
@@ -350,13 +350,13 @@ class GoController extends BaseController {
     } catch (error) {
       console.log(error.message)
       await transaction.rollback();
-      return this.jsonReturn(-1,{errorStyleNoList},error.message);
+      return ctx.jsonReturn(-1,{errorStyleNoList},error.message);
     }
 
     let returnData={
       errorStyleNoList,
     }
-    return this.jsonReturn(0,returnData,'Successfully');
+    return ctx.jsonReturn(0,returnData,'Successfully');
     
   }
 
@@ -383,17 +383,17 @@ class GoController extends BaseController {
     let hasError = 0;
     let errorData = {};
     if(!GO_NO){
-      return this.jsonReturn(-1,{errorData},'请选择要修改的数据');
+      return ctx.jsonReturn(-1,{errorData},'请选择要修改的数据');
     }
 
     if(![1,0].includes(OutSource)){
-      return this.jsonReturn(-1,'OutSource 必须为 Y 或 N')
+      return ctx.jsonReturn(-1,'OutSource 必须为 Y 或 N')
     }
     
     //查出旧数据
     let goData  = await ctx.service.go.getDetail(GO_NO);
     if(!goData){
-      return this.jsonReturn(20002,'数据不存在或已被删除');
+      return ctx.jsonReturn(20002,'数据不存在或已被删除');
     }
     let Customer_Code = goData.goTitle.Customer_Code;
     console.log(Customer_Code);
@@ -404,7 +404,7 @@ class GoController extends BaseController {
         return el.toLowerCase();
       })
     }else{
-      return this.jsonReturn(-1,'customer_code:'+Customer_Code+'查不到尺寸列表');
+      return ctx.jsonReturn(-1,'customer_code:'+Customer_Code+'查不到尺寸列表');
     }
     
    
@@ -516,9 +516,9 @@ class GoController extends BaseController {
       await transaction.commit();   
     } catch (error) {
       await transaction.rollback();
-      return this.jsonReturn(-1,errorData,error.message);
+      return ctx.jsonReturn(-1,errorData,error.message);
     }
-    return this.jsonReturn(0,'Successfully');
+    return ctx.jsonReturn(0,'Successfully');
 
 
   }
@@ -543,10 +543,10 @@ class GoController extends BaseController {
 
 
     if(typeof(go_nos)!='object' || go_nos.length < 1){
-      return this.jsonReturn(-1,'请选择要修改的数据')
+      return ctx.jsonReturn(-1,'请选择要修改的数据')
     }
     if(!['y','n'].includes(outsource.toLowerCase())){
-      return this.jsonReturn(-1,'OutSource 必须为 Y 或 N')
+      return ctx.jsonReturn(-1,'OutSource 必须为 Y 或 N')
     }
     outsource = outsource == 'y' ? 1 : 0;
 
@@ -571,7 +571,7 @@ class GoController extends BaseController {
       goNewGoNoList[GO_NO] = GO_NO_new;
     }
     if(hasError){
-      return this.jsonReturn(-1,errorMsg)
+      return ctx.jsonReturn(-1,errorMsg)
     }
     // console.log('goDataList');
     // console.log(goDataList);
@@ -670,9 +670,9 @@ class GoController extends BaseController {
     }
 
     if(hasError){
-      return this.jsonReturn(-1,{},'Failed',{errorMsg});
+      return ctx.jsonReturn(-1,{},'Failed',{errorMsg});
     }else{
-      return this.jsonReturn(0,'Successfully');
+      return ctx.jsonReturn(0,'Successfully');
     }
     
 
@@ -690,7 +690,7 @@ class GoController extends BaseController {
     let data = {}
     let res  = await ctx.service.go.getDetail(GO_NO);
     if(!res){
-      return this.jsonReturn(20002,'NO Data');
+      return ctx.jsonReturn(20002,'NO Data');
     }
     data = Object.assign({},res);
     let GO_ID = data.goTitle.GO_ID;
@@ -717,7 +717,7 @@ class GoController extends BaseController {
 
     
 
-    return this.jsonReturn(0,data,'success');
+    return ctx.jsonReturn(0,data,'success');
     
   }
 
@@ -730,7 +730,7 @@ class GoController extends BaseController {
     let ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
 
     if(!ids){
-      return this.jsonReturn(-1,"请选择要删除的数据");
+      return ctx.jsonReturn(-1,"请选择要删除的数据");
     }
     const userData = await this.getUserData();
     const username = userData.username;
@@ -747,15 +747,15 @@ class GoController extends BaseController {
     }
     let list = await ctx.model.GoTitle.findAll({where});
     if(list.length === 0){
-      return this.jsonReturn(-1,'你不能删除不是自己发布的内容');
+      return ctx.jsonReturn(-1,'你不能删除不是自己发布的内容');
     }
 
     where.Is_Active = 1;
     let res = await ctx.model.GoTitle.update({Is_Active:0},{where});
     if(res && res[0]>0){
-      return this.jsonReturn(0,'Successfully');
+      return ctx.jsonReturn(0,'Successfully');
     }else{
-      return this.jsonReturn(-1,'Failed');
+      return ctx.jsonReturn(-1,'Failed');
 
     }
     

@@ -9,9 +9,9 @@ class GenFactoryController extends BaseController {
     type = type ? parseInt(type) : 0;
     const res = await ctx.service.genFactory.getFactoryIDList(type);
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[]},'No data');
+      return ctx.jsonReturn(20002,{list:[]},'No data');
     }
-    return this.jsonReturn(0,{list:res},'Successfully');
+    return ctx.jsonReturn(0,{list:res},'Successfully');
 
   }
 

@@ -13,9 +13,9 @@ class MasterSizeController extends BaseController {
       size,
     };
     if(size.length == 0){
-      return this.jsonReturn(20002,{size:[]},'No data');
+      return ctx.jsonReturn(20002,{size:[]},'No data');
     }
-    return this.jsonReturn(0,returnData,'Successfully');
+    return ctx.jsonReturn(0,returnData,'Successfully');
   }
 
 }

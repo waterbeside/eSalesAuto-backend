@@ -9,9 +9,9 @@ class GenBrandController extends BaseController {
     
     const res = await ctx.service.genBrandLabel.getBrandCDByCustomerCode(customer_code);
     if(res.length == 0){
-      return this.jsonReturn(20002,{list:[]},'No data');
+      return ctx.jsonReturn(20002,{list:[]},'No data');
     }
-    return this.jsonReturn(0,{list:res},'Successfully');
+    return ctx.jsonReturn(0,{list:res},'Successfully');
 
   }
 

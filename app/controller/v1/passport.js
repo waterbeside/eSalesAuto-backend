@@ -8,7 +8,7 @@ class PassportController extends BaseController {
   
     let userData = await this.getUserData(1);
     if(!userData){
-      return this.jsonReturn(10004,'Failed');
+      return ctx.jsonReturn(10004,'Failed');
     }
     let username = userData.username;
     let customer_code = await ctx.model.MasterGenUser.findCustomCodeByUserID(username);
@@ -22,7 +22,7 @@ class PassportController extends BaseController {
     }
     console.log(returnData);
 
-    return this.jsonReturn(0,returnData,'Successful');
+    return ctx.jsonReturn(0,returnData,'Successful');
 
   }
 
@@ -37,13 +37,13 @@ class PassportController extends BaseController {
     if(!res){
       var errorCode  = ctx.model.User.errorCode ? ctx.model.User.errorCode : -1;
       var errorMsg  = ctx.model.User.errorMsg ? ctx.model.User.errorMsg : '登入失败';
-      return this.jsonReturn(errorCode,errorMsg);
+      return ctx.jsonReturn(errorCode,errorMsg);
     }
     await ctx.model.User.update(
       {last_login_time:new Date()},
       {where:{ id: res.uid }}
     );
-    return this.jsonReturn(0,res,'Successful');
+    return ctx.jsonReturn(0,res,'Successful');
 
   }
 
@@ -53,7 +53,7 @@ class PassportController extends BaseController {
   async logout() {
     const { ctx } = this;
    
-    return this.jsonReturn(0,'Successful');
+    return ctx.jsonReturn(0,'Successful');
   }
 
   /**
@@ -65,9 +65,9 @@ class PassportController extends BaseController {
     const username = userData.username;
     const res = await ctx.model.MasterGenUser.findByUserID(username);
     if(!res){
-      return this.jsonReturn(20002,[],'No Data');
+      return ctx.jsonReturn(20002,[],'No Data');
     }
-    return this.jsonReturn(0,res,'Successful');
+    return ctx.jsonReturn(0,res,'Successful');
   }
 
 }
