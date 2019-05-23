@@ -13,6 +13,7 @@ module.exports = app => {
     },
     username: STRING(255),
     status: INTEGER,
+    is_delete: INTEGER,
     password: STRING(32),
     roles: STRING(32),
     salt: STRING(6),
@@ -106,6 +107,19 @@ module.exports = app => {
     return crypto.createHash('md5').update(hash_2).digest('hex');
   }
 
+  /** 
+   * 密码加密
+   */
+  User.createPassword = function(pass,type=0){
+    let salt = crypto.randomBytes(Math.ceil(3)).toString('hex').slice(0, 6);
+    let password = this.hashPassword(pass,salt,type);
+    return {salt,password};
+  }
+
+
+  
+
+
   /**
    * 检验用户名唯一
    */
@@ -121,8 +135,6 @@ module.exports = app => {
       }
     }
     let cnt = await this.count({where});
-    console.log('cnt')
-    console.log(cnt)
     if(cnt>0){
       return false;
     }else{
