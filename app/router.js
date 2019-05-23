@@ -40,8 +40,8 @@ module.exports = app => {
 
   //User模块
   router.get('/api/v1/user/check_unique', permission(),            controller.v1.user.checkUnique); //验证唯一
-  router.resources('/api/v1/user',        permission(['admin']),  controller.v1.user);
-
+  router.resources('/api/v1/user',        permission(['admin']),   controller.v1.user);
+  router.delete('/api/v1/user',           permission(['admin']),   controller.v1.user.destroy); //删除
 
   
   
