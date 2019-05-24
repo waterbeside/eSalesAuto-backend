@@ -13,11 +13,18 @@ module.exports = app => {
   
   router.get('/', controller.v1.home.index);
 
-  //用户模块
+  //用户通行证模块
   router.post('/api/v1/passport/login',   controller.v1.passport.login);
   router.get('/api/v1/passport',               permission(), controller.v1.passport.index);
   router.delete('/api/v1/passport',            permission(), controller.v1.passport.logout);
   router.get('/api/v1/passport/customer_code', permission(), controller.v1.passport.customer_code);
+  router.patch('/api/v1/passport/change_pass', permission(), controller.v1.passport.change_pass);
+  
+
+  //User模块
+  router.get('/api/v1/user/check_unique', permission(),            controller.v1.user.checkUnique); //验证唯一
+  router.resources('/api/v1/user',        permission(['admin']),   controller.v1.user);
+  router.delete('/api/v1/user',           permission(['admin']),   controller.v1.user.destroy); //删除
   
 
   //SPPO模块
@@ -38,12 +45,6 @@ module.exports = app => {
   router.put('/api/v1/go/batch',      permission(['master','general']),   controller.v1.go.batchEdit); //批量编辑
   router.put('/api/v1/go',            permission(['master','general']),   controller.v1.go.edit); //编辑
 
-  //User模块
-  router.get('/api/v1/user/check_unique', permission(),            controller.v1.user.checkUnique); //验证唯一
-  router.resources('/api/v1/user',        permission(['admin']),   controller.v1.user);
-  router.delete('/api/v1/user',           permission(['admin']),   controller.v1.user.destroy); //删除
-
-  
   
 
   //Role模块

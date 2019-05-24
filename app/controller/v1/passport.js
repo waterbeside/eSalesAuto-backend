@@ -1,4 +1,5 @@
 'use strict';
+const moment = require('moment');
 
 // const Controller = require('egg').Controller;
 const BaseController = require('../Base');
@@ -19,6 +20,7 @@ class PassportController extends BaseController {
       "sales_team": userData.sales_team,
       "customer_code": customer_code,
       'full_name': userData.FullName,
+      'last_login_time': moment(userData.last_login_time).valueOf(),
     }
     console.log(returnData);
 
@@ -68,6 +70,27 @@ class PassportController extends BaseController {
       return ctx.jsonReturn(20002,[],'No Data');
     }
     return ctx.jsonReturn(0,res,'Successful');
+  }
+
+
+  async change_pass(){
+    const { ctx } = this;
+    const userData = await this.getUserData();
+    const username = userData.username;
+    const id = userData.uid;
+    let pass = ctx.request.body.pass;
+    let passRes = ctx.model.User.createPassword(pass);
+    let upData = {
+      password : passRes.password,
+      salt     : passRes.salt,
+    }
+   
+    let res =  await ctx.model.User.update(upData,{where:{id}});
+    if(res && res[0] > 0){
+      return ctx.jsonReturn(0,'Successfully');
+    }else{
+      return ctx.jsonReturn(-1,null,'提交失败，请稍候再试'); 
+    }
   }
 
 }
