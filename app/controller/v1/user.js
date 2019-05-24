@@ -153,6 +153,7 @@ class UserController extends BaseController {
         return ctx.jsonReturn(992,{errorFields},errorMsg);
       }
     }
+    username = username.toLowerCase();
   
     //验证email合法性
     if(data.email && !ctx.helper.validate.isEmail(data.email)){
@@ -180,7 +181,7 @@ class UserController extends BaseController {
       password,
       salt,
       FullName    : data.FullName,
-      sales_team  : data.sales_team,
+      sales_team  : data.sales_team.toUpperCase(),
       status      : data.status ? 1 : 0,
       create_time : new Date(),
       is_delete   : 0,
@@ -242,10 +243,10 @@ class UserController extends BaseController {
       return ctx.jsonReturn(992,{errorFields},errorMsg);
     }
 
-    // if(sales_team)
+
     let upData = {
       FullName    : data.FullName,
-      sales_team  : data.sales_team,
+      sales_team  : data.sales_team.toUpperCase(),
       status      : data.status ? 1 : 0,
     }
     if(data.email){
@@ -260,7 +261,6 @@ class UserController extends BaseController {
       upData.salt = passRes.salt;
     }
     let res =  await ctx.model.User.update(upData,{where:{id}});
-    console.log(res)
 
     if(res && res[0] > 0){
       return ctx.jsonReturn(0,'Successfully');
