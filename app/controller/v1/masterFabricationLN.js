@@ -6,53 +6,53 @@ class MasterFabricationLNController extends BaseController {
 
   async index() {
     const { ctx } = this;
-    let list =  await ctx.model.MasterFabricationLN.findAll();
-    let returnData = {
+    const list = await ctx.model.MasterFabricationLN.findAll();
+    const returnData = {
       list,
     };
-    if(list.length == 0){
-      return ctx.jsonReturn(20002,{list:[]},'No data');
+    if (list.length === 0) {
+      return ctx.jsonReturn(20002, { list: [] }, 'No data');
     }
-    return ctx.jsonReturn(0,returnData,'Successful');
+    return ctx.jsonReturn(0, returnData, 'Successful');
   }
 
 
-  async getCustomerFabCodes(){
-    const { ctx, app } = this;    
-    let cacheKey = "master:fabricationLN:customer_fab_codes";
-    let cacheData = await ctx.helper.getStoreData(cacheKey);
-    if(cacheData){
-      return ctx.jsonReturn(0,{list:cacheData},'Successfully');
+  async getCustomerFabCodes() {
+    const { ctx, app } = this;
+    const cacheKey = 'master:fabricationLN:customer_fab_codes';
+    const cacheData = await ctx.helper.getStoreData(cacheKey);
+    if (cacheData) {
+      return ctx.jsonReturn(0, { list: cacheData }, 'Successfully');
     }
 
-    let list = [];
-    let res = await ctx.model.MasterFabricationLN.findAll(
+    const list = [];
+    const res = await ctx.model.MasterFabricationLN.findAll(
       {
-        group: ['Customer_Fab_Code'],
-        attributes:['Customer_Fab_Code']
+        group: [ 'Customer_Fab_Code' ],
+        attributes: [ 'Customer_Fab_Code' ],
       }
     );
     res.forEach(item => {
       list.push(item.Customer_Fab_Code);
     });
 
-    if(list.length > 0){
-      await ctx.helper.setStoreData(cacheKey,list,60*60*24);
+    if (list.length > 0) {
+      await ctx.helper.setStoreData(cacheKey, list, 60 * 60 * 24);
     }
 
-    return ctx.jsonReturn(0,{list},'Successfully');
+    return ctx.jsonReturn(0, { list }, 'Successfully');
 
   }
 
 
   async checkExist() {
     const { ctx } = this;
-    let Customer_Fab_Code = ctx.request.query.customer_fab_code;
-    let where = {
-      Customer_Fab_Code
-    }
-    const res = await ctx.model.MasterFabricationLN.count({where});
-    return ctx.jsonReturn(0,{is_exist:res},'Successfully');
+    const Customer_Fab_Code = ctx.request.query.customer_fab_code;
+    const where = {
+      Customer_Fab_Code,
+    };
+    const res = await ctx.model.MasterFabricationLN.count({ where });
+    return ctx.jsonReturn(0, { is_exist: res }, 'Successfully');
   }
 }
 module.exports = MasterFabricationLNController;

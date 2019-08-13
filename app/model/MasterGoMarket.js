@@ -3,7 +3,8 @@
 module.exports = app => {
   const { STRING, INTEGER, DATE } = app.Sequelize;
 
-  const MasterGoMarket = app.model.define('Master_GO_Market', {
+  const MasterGoMarket = app.model.define('Master_GO_Market',
+    {
       ID: {
         type: INTEGER,
         primaryKey: true,
@@ -20,20 +21,20 @@ module.exports = app => {
       Ship_Mode: STRING(10),
 
     },
-    {freezeTableName: true,
-      timestamps: false, 
+    { freezeTableName: true,
+      timestamps: false,
     }
   );
 
-  MasterGoMarket.getOneByWarehouse  = async function(Warehouse) {
+  MasterGoMarket.getOneByWarehouse = async function(Warehouse) {
     const Op = app.Sequelize.Op;
     return await this.findOne({
-      where: { 
+      where: {
         Warehouse,
       },
     });
   };
-  
+
 
   return MasterGoMarket;
 };

@@ -1,4 +1,5 @@
-const NodeCache = require( "node-cache" );
+'use strict';
+
 
 module.exports = {
    
@@ -22,7 +23,7 @@ module.exports = {
   /** 
    * 数字位数补全
    */
-  prefixO(num,length){ 
+  prefixO(num, length){ 
     return (Array(length).join('0')+num).slice(-length); 
   },
 
@@ -33,10 +34,10 @@ module.exports = {
    * @param {Number} stop     结束位
    * @param {String} replacer 
    */
-  replaceStr(str,start,stop,replacer){ 
-    if(str.substring(start,stop) == replacer){
+  replaceStr(str, start, stop, replacer) { 
+    if (str.substring(start, stop) === replacer) {
       return str;
-    }else{
+    } else {
       return str.substring(0,start) + replacer + str.substring(stop,str.length); 
     }
   },

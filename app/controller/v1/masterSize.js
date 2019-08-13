@@ -6,16 +6,15 @@ class MasterSizeController extends BaseController {
 
   async getSizes() {
     const { ctx } = this;
-    
-    let customer_code = ctx.request.query.customer_code;
-    let size =  await ctx.service.masterSize.getSizesByCustomerCode(customer_code);
-    let returnData = {
+    const customer_code = ctx.request.query.customer_code;
+    const size = await ctx.service.masterSize.getSizesByCustomerCode(customer_code);
+    const returnData = {
       size,
     };
-    if(size.length == 0){
-      return ctx.jsonReturn(20002,{size:[]},'No data');
+    if (size.length === 0) {
+      return ctx.jsonReturn(20002, { size: [] }, 'No data');
     }
-    return ctx.jsonReturn(0,returnData,'Successfully');
+    return ctx.jsonReturn(0, returnData, 'Successfully');
   }
 
 }

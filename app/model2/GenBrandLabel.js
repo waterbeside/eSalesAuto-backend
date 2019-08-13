@@ -3,7 +3,8 @@
 module.exports = app => {
   const { STRING, INTEGER, DATE } = app.Sequelize;
 
-  const GenBrandLabel = app.model2.define('GEN_BRAND_LABEL', {
+  const GenBrandLabel = app.model2.define('GEN_BRAND_LABEL',
+    {
       CUSTOMER_CD: STRING(10),
       BRAND_CD: STRING(4),
       LABEL_CD: STRING(20),
@@ -15,12 +16,10 @@ module.exports = app => {
       LAST_MODI_USER_ID: STRING(20),
       LAST_MODI_DATE: DATE,
     },
-    {freezeTableName: true,
-      timestamps: false, 
+    { freezeTableName: true,
+      timestamps: false,
     }
   );
-
-
 
   return GenBrandLabel;
 };

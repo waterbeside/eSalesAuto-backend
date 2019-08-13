@@ -1,3 +1,4 @@
+'use strict';
 const secret = require('./secret.js');
 
 exports.sequelize = {
@@ -12,10 +13,10 @@ exports.sequelize = {
       username: secret.mssql.username,
       password: secret.mssql.password,
       timezone: '+08:00',
-      dialectOptions:{
+      dialectOptions: {
         requestTimeout: 60000,
-          // instanceName:'DEV'
-      }  //设置MSSQL超时时间
+        // instanceName:'DEV'
+      }, // 设置MSSQL超时时间
       // other sequelize configurations
     },
     {
@@ -28,13 +29,13 @@ exports.sequelize = {
       username: secret.mssql2.username,
       password: secret.mssql2.password,
       timezone: '+08:00',
-      dialectOptions:{
+      dialectOptions: {
         requestTimeout: 15000,
-          // instanceName:'DEV'
-      } 
+        // instanceName:'DEV'
+      },
       // other sequelize configurations
     },
-   
+
   ],
 };
 
@@ -46,7 +47,6 @@ exports.oracle = {
     connectString: secret.oracle.connectString,
   },
 };
-
 
 
 exports.mssql = {
@@ -72,12 +72,12 @@ exports.mssql = {
 
 exports.redis = {
   client: {
-    port: secret.redis.port,          // Redis port
-    host: secret.redis.host,   // Redis host
+    port: secret.redis.port, // Redis port
+    host: secret.redis.host, // Redis host
     password: secret.redis.password,
     db: 0,
   },
-}
+};
 
 // exports.mysql = {
 //   client: {

@@ -4,7 +4,7 @@
 // exports.static = true;
 exports.jwt = {
   enable: true,
-  package: "egg-jwt"
+  package: 'egg-jwt',
 };
 exports.sequelize = {
   enable: true,
@@ -26,8 +26,8 @@ exports.redis = {
 };
 
 exports.cors = {
-    enable: true,
-    package: 'egg-cors',
+  enable: true,
+  package: 'egg-cors',
 };
 
 exports.passport = {

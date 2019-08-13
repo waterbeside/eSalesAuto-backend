@@ -12,10 +12,10 @@ class GenBrandLabelService extends BaseService {
     // const res = await connection.execute("SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM GEN_BRAND_LABEL WHERE  CUSTOMER_CD = '"+customer_code+"' AND ACTIVE='Y' ORDER BY BRAND_CD ASC");
     // connection.close();
     // console.log(this.formatOracleRes(res))
-    // return this.formatOracleRes(res);    
+    // return this.formatOracleRes(res);
 
-    let sql = "SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM [escmowner].[GEN_BRAND_LABEL] WHERE CUSTOMER_CD = '"+customer_code+"'  AND ACTIVE='Y' ORDER BY BRAND_CD ASC"
-    let res = await this.ctx.model2.query(sql);
+    const sql = "SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM [escmowner].[GEN_BRAND_LABEL] WHERE CUSTOMER_CD = '" + customer_code + "'  AND ACTIVE='Y' ORDER BY BRAND_CD ASC";
+    const res = await this.ctx.model2.query(sql);
     return res[0];
 
 
@@ -24,9 +24,9 @@ class GenBrandLabelService extends BaseService {
   async findBandByCustomerCode(customer_code) {
     // console.log(typeof(this.ctx.model.SppoTitle.findById));
     const res = await this.findAllByCustomerCode(customer_code);
-    let returnData = [];
+    const returnData = [];
     res.forEach(element => {
-      returnData.push(element.BRAND_CD)
+      returnData.push(element.BRAND_CD);
     });
     return returnData;
   }
