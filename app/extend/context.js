@@ -1,7 +1,8 @@
 'use strict';
 
-module.exports = {
+const moment = require('moment');
 
+module.exports = {
 
   /**
    * 用于接口输出,返回指定的json
@@ -15,14 +16,13 @@ module.exports = {
       msg = data;
       data = null;
     }
-    const date = new Date().UTC();
-    const now = (date / 1000).toFixed(0);
+    const date = moment().unix();
 
     this.body = {
       code,
       data,
       msg,
-      date: now,
+      date,
       extra,
     };
     return false;
