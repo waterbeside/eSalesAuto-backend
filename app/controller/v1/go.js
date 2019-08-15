@@ -12,7 +12,7 @@ class GoController extends BaseController {
    * GO列表
    */
   async index() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const go_no = ctx.request.query.go_no;
     const season = ctx.request.query.season;
     const date_start = ctx.request.query.date_start ? parseInt(ctx.request.query.date_start) : 0;
@@ -64,7 +64,7 @@ class GoController extends BaseController {
       return ctx.jsonReturn(20002, { list: [], pagination }, 'No data');
     }
 
-    const list = res.map((item, index) => {
+    const list = res.map(item => {
       const newItem = Object.assign(item.dataValues);
       newItem.Create_Time = moment(item.Create_Time).valueOf();
       newItem.Update_Time = moment(item.Update_Time).valueOf();
@@ -83,16 +83,14 @@ class GoController extends BaseController {
    * 添加GO
    */
   async save() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const data = ctx.request.body.data;
     const customer_code = ctx.request.body.customer_code;
     const brand = ctx.request.body.brand;
 
-    const successStyleNoList = [];
     const errorStyleNoList = [];
-    const errorIndex = [];
     const errorMsgList = {};
     let hasError = 0;
     let errMsg = '';
@@ -154,7 +152,7 @@ class GoController extends BaseController {
 
     // 查出基础数据和旧数据
     for (const Style_No in style_no_kv_list) {
-      const dataList = style_no_kv_list[Style_No];
+      // const dataList = style_no_kv_list[Style_No];
       // 查出基础数据
       const GMT_FTY = style_no_kv_list[Style_No][0].gmt_fty;
       const FDS_No = style_no_kv_list[Style_No][0].fds_no;
@@ -364,7 +362,7 @@ class GoController extends BaseController {
    * 编辑
    */
   async edit() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const Season = ctx.request.body.season;
@@ -378,8 +376,8 @@ class GoController extends BaseController {
     const userData = await this.getUserData();
     const username = userData.username;
 
-    const errorMsg = '';
-    const hasError = 0;
+    // const errorMsg = '';
+    // const hasError = 0;
     const errorData = {};
     if (!GO_NO) {
       return ctx.jsonReturn(-1, { errorData }, '请选择要修改的数据');
@@ -527,7 +525,7 @@ class GoController extends BaseController {
    * 批量编辑
    */
   async batchEdit() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const season = ctx.request.body.season;
@@ -583,8 +581,8 @@ class GoController extends BaseController {
         const goData = goDataList[GO_NO];
         const goTitleData_old = goData.goTitle;
         const Style_No = goTitleData_old.Style_No;
-        const GO_ID_old = goTitleData_old.GO_ID;
-        const GO_NO_old = goTitleData_old.GO_NO;
+        // const GO_ID_old = goTitleData_old.GO_ID;
+        // const GO_NO_old = goTitleData_old.GO_NO;
 
         const Rev_NO_new = parseInt(goTitleData_old.Rev_NO) + 1;
         const GO_NO_new = goNewGoNoList[GO_NO];
@@ -623,7 +621,7 @@ class GoController extends BaseController {
           }
           console.log('JO_NO_newList');
           console.log(JO_NO_newList);
-          const goLotInfot_lst_batchData = goLotInfo_lst.map((rItem, index) => {
+          const goLotInfot_lst_batchData = goLotInfo_lst.map(rItem => {
             const newItem = Object.assign({}, rItem.dataValues);
             const JO_NO = JO_NO_newList[rItem.JO_NO];
             newItem.GO_ID = GO_ID_new;
@@ -680,7 +678,7 @@ class GoController extends BaseController {
    * 详情
    */
   async detail() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const GO_NO = ctx.request.query.go_no;
 
     let data = {};
@@ -721,14 +719,14 @@ class GoController extends BaseController {
    * 删除数据
    */
   async del() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
 
     if (!ids) {
       return ctx.jsonReturn(-1, '请选择要删除的数据');
     }
-    const userData = await this.getUserData();
-    const username = userData.username;
+    // const userData = await this.getUserData();
+    // const username = userData.username;
 
     const idsArray = ids.toString().split(',');
 

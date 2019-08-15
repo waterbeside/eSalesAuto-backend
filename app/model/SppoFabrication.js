@@ -4,7 +4,7 @@
  */
 
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const SppoFabrication = app.model.define('SPPO_Fabrication',
     {

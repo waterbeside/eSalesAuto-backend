@@ -1,8 +1,7 @@
 'use strict';
-const moment = require('moment');
 
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const GoColorQty = app.model.define('GO_Color_Qty', {
     JO_NO: STRING(20),

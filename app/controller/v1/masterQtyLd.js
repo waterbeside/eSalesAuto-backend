@@ -5,7 +5,7 @@ const BaseController = require('../Base');
 class MasterQtyLdController extends BaseController {
 
   async getGarmentParts() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const cacheKey = 'master:garment_parts';
     const cacheData = await ctx.helper.getStoreData(cacheKey);
     if (cacheData) {

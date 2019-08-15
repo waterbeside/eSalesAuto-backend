@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const MasterSize = app.model.define('Master_Size',
     {
@@ -17,7 +17,6 @@ module.exports = app => {
 
 
   MasterSize.getByCustomerCode = async function(Customer_Code) {
-    const Op = app.Sequelize.Op;
     return await this.findAll({
       where: {
         Customer_Code,

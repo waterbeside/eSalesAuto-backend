@@ -1,8 +1,7 @@
 'use strict';
 
-const moment = require('moment');
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const MasterQtyLD = app.model.define('Master_Qty_LD',
     {

@@ -6,7 +6,7 @@ class TimmyService extends Service {
     console.log(this.app.oracle);
     const connection = await this.app.oracle.getConnection();
     const result = await connection.execute('SELECT * FROM TIMMY');
-    connection.close();
+    await connection.close();
     console.log(result);
     return result;
   }

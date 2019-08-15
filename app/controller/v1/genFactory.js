@@ -4,7 +4,7 @@
 const BaseController = require('../Base');
 class GenFactoryController extends BaseController {
   async getFactoryIds() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     let type = ctx.request.query.type;
     type = type ? parseInt(type) : 0;
     const res = await ctx.service.genFactory.getFactoryIDList(type);

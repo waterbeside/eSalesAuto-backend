@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const MasterGoMarket = app.model.define('Master_GO_Market',
     {
@@ -27,7 +27,6 @@ module.exports = app => {
   );
 
   MasterGoMarket.getOneByWarehouse = async function(Warehouse) {
-    const Op = app.Sequelize.Op;
     return await this.findOne({
       where: {
         Warehouse,

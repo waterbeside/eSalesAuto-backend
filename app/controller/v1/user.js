@@ -26,7 +26,7 @@ class UserController extends BaseController {
     // 筛选
     const Op = ctx.model.Op;
 
-    let where = {
+    const where = {
       is_delete: 0,
     };
     if (role) {
@@ -54,7 +54,7 @@ class UserController extends BaseController {
     if (date_start && date_end) {
       where.create_time = {
         [Op.gte]: date_start,
-        [Op.lt]: date_end + (1000 * 60 * 60 * 24)
+        [Op.lt]: date_end + (1000 * 60 * 60 * 24),
       };
     }
     // 字段
@@ -129,7 +129,7 @@ class UserController extends BaseController {
     const res = await ctx.model.User.findOne({
       where,
       attributes,
-    })
+    });
     return ctx.jsonReturn(0, res, 'Successfully');
   }
 
@@ -143,14 +143,14 @@ class UserController extends BaseController {
     let username = data.username;
     let hasError = 0;
     let errorMsg = '';
-    let errorFields = {};
+    const errorFields = {};
 
-    let unEmptyFields = ['FullName', 'sales_team', 'username', 'role']
-    for (let i in unEmptyFields) {
-      let item = unEmptyFields[i];
-      if (typeof (data[item]) == 'undefined' || _.trim(data[item]) == '') {
+    const unEmptyFields = [ 'FullName', 'sales_team', 'username', 'role' ];
+    for (const i in unEmptyFields) {
+      const item = unEmptyFields[i];
+      if (typeof (data[item]) === 'undefined' || _.trim(data[item]) === '') {
         hasError = true;
-        errorMsg = item + '不能为空'
+        errorMsg = item + '不能为空';
         errorFields[item] = errorMsg;
         break;
       } else {
@@ -159,69 +159,69 @@ class UserController extends BaseController {
     }
     if (hasError) {
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
-    if (![0, 1].includes(data.status)) {
-      errorMsg = '状态必须为0或1'
-      errorFields['status'] = errorMsg;
+    if (![ 0, 1 ].includes(data.status)) {
+      errorMsg = '状态必须为0或1';
+      errorFields.status = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
-    //验证用户名合法性
+    // 验证用户名合法性
     if (!ctx.helper.validate.isNoSpaces(username)) {
-      errorMsg = '用户名不能有空格'
-      errorFields['username'] = errorMsg;
+      errorMsg = '用户名不能有空格';
+      errorFields.username = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     } else if (!ctx.helper.validate.isNoSpecialBut_(username)) {
-      errorMsg = '用户名只允许由字母数字和下划线组成'
-      errorFields['username'] = errorMsg;
+      errorMsg = '用户名只允许由字母数字和下划线组成';
+      errorFields.username = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
-    } else {
-      let checkUniqueRes = await ctx.model.User.checkUnique(username, 0);
-      if (!checkUniqueRes) {
-        errorMsg = '用户名已经被占用'
-        errorFields['username'] = errorMsg;
-        return ctx.jsonReturn(992, {
-          errorFields
-        }, errorMsg);
-      }
     }
+    const checkUniqueRes = await ctx.model.User.checkUnique(username, 0);
+    if (!checkUniqueRes) {
+      errorMsg = '用户名已经被占用';
+      errorFields.username = errorMsg;
+      return ctx.jsonReturn(992, {
+        errorFields,
+      }, errorMsg);
+    }
+
     username = username.toLowerCase();
 
-    //验证email合法性
+    // 验证email合法性
     if (data.email && !ctx.helper.validate.isEmail(data.email)) {
-      errorMsg = '邮箱格式不正确'
-      errorFields['email'] = errorMsg;
+      errorMsg = '邮箱格式不正确';
+      errorFields.email = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
-    //验证密码    
+    // 验证密码
     let password = '';
     let salt = '';
     if (data.pass) {
-      let passRes = ctx.model.User.createPassword(data.pass);
+      const passRes = ctx.model.User.createPassword(data.pass);
       password = passRes.password;
       salt = passRes.salt;
     } else {
-      errorMsg = '密码不能为空'
-      errorFields['pass'] = errorMsg;
+      errorMsg = '密码不能为空';
+      errorFields.pass = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
     // if(sales_team)
-    let upData = {
+    const upData = {
       username,
       password,
       salt,
@@ -230,21 +230,19 @@ class UserController extends BaseController {
       status: data.status ? 1 : 0,
       create_time: new Date(),
       is_delete: 0,
-      roles: data.role
-    }
+      roles: data.role,
+    };
     if (data.email) {
       upData.email = data.email;
     }
 
-    let res = await ctx.model.User.create(upData);
+    const res = await ctx.model.User.create(upData);
     if (res) {
       return ctx.jsonReturn(0, {
-        id: res.id
+        id: res.id,
       }, 'Successfully');
-    } else {
-      return ctx.jsonReturn(-1, null, '提交失败，请稍候再试');
     }
-
+    return ctx.jsonReturn(-1, null, '提交失败，请稍候再试');
 
   }
 
@@ -254,23 +252,23 @@ class UserController extends BaseController {
   async update() {
     const {
       ctx,
-      app
+      app,
     } = this;
-    let id = parseInt(ctx.params.id);
-    let data = ctx.request.body;
-    console.log(data)
+    const id = parseInt(ctx.params.id);
+    const data = ctx.request.body;
+    console.log(data);
     let hasError = 0;
     let errorMsg = '';
-    let errorFields = {};
+    const errorFields = {};
     if (!id) {
       return ctx.jsonReturn(992, null, 'Error id');
     }
-    let unEmptyFields = ['FullName', 'sales_team']
-    for (let i in unEmptyFields) {
-      let item = unEmptyFields[i];
-      if (typeof (data[item]) == 'undefined' || _.trim(data[item]) == '') {
+    const unEmptyFields = [ 'FullName', 'sales_team' ];
+    for (const i in unEmptyFields) {
+      const item = unEmptyFields[i];
+      if (typeof (data[item]) === 'undefined' || _.trim(data[item]) === '') {
         hasError = true;
-        errorMsg = item + '不能为空'
+        errorMsg = item + '不能为空';
         errorFields[item] = errorMsg;
         break;
       } else {
@@ -279,32 +277,32 @@ class UserController extends BaseController {
     }
     if (hasError) {
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
-    if (![0, 1].includes(data.status)) {
-      errorMsg = '状态必须为0或1'
-      errorFields['status'] = errorMsg;
+    if (![ 0, 1 ].includes(data.status)) {
+      errorMsg = '状态必须为0或1';
+      errorFields.status = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
     if (data.email && !ctx.helper.validate.isEmail(data.email)) {
-      errorMsg = '邮箱格式不正确'
-      errorFields['email'] = errorMsg;
+      errorMsg = '邮箱格式不正确';
+      errorFields.email = errorMsg;
       return ctx.jsonReturn(992, {
-        errorFields
+        errorFields,
       }, errorMsg);
     }
 
 
-    let upData = {
+    const upData = {
       FullName: data.FullName,
       sales_team: data.sales_team.toUpperCase(),
       status: data.status ? 1 : 0,
-    }
+    };
     if (data.email) {
       upData.email = data.email;
     }
@@ -312,21 +310,21 @@ class UserController extends BaseController {
       upData.roles = data.role;
     }
     if (data.pass) {
-      let passRes = ctx.model.User.createPassword(data.pass);
+      const passRes = ctx.model.User.createPassword(data.pass);
       upData.password = passRes.password;
       upData.salt = passRes.salt;
     }
-    let res = await ctx.model.User.update(upData, {
+    const res = await ctx.model.User.update(upData, {
       where: {
-        id
-      }
+        id,
+      },
     });
 
     if (res && res[0] > 0) {
       return ctx.jsonReturn(0, 'Successfully');
-    } else {
-      return ctx.jsonReturn(-1, null, '提交失败，请稍候再试');
     }
+    return ctx.jsonReturn(-1, null, '提交失败，请稍候再试');
+
   }
 
   /**
@@ -335,48 +333,42 @@ class UserController extends BaseController {
   async destroy() {
     const {
       ctx,
-      app
+      app,
     } = this;
 
-    let ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
+    const ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
 
     if (!ids) {
-      return ctx.jsonReturn(-1, "请选择要删除的数据");
+      return ctx.jsonReturn(-1, '请选择要删除的数据');
     }
     const userData = await this.getUserData();
     const username = userData.username;
 
-    let idsArray = ids.toString().split(',');
+    const idsArray = ids.toString().split(',');
     if (idsArray.includes('1')) {
       return ctx.jsonReturn(-1, '创始管理员账号不可被删除');
 
     }
     const Op = ctx.model.Op;
-    let where = {
+    const where = {
       id: {
         [Op.in]: idsArray,
       },
-    }
+    };
 
-    let res = await ctx.model.User.update({
-      is_delete: 1
+    const res = await ctx.model.User.update({
+      is_delete: 1,
     }, {
-      where
+      where,
     });
     console.log(res);
     if (res && res[0] > 0) {
       return ctx.jsonReturn(0, 'Successfully');
-    } else {
-      return ctx.jsonReturn(-1, 'Failed');
-
     }
-
+    return ctx.jsonReturn(-1, 'Failed');
 
 
   }
-
-
-
 
 
   /**
@@ -385,21 +377,20 @@ class UserController extends BaseController {
   async checkUnique() {
     const {
       ctx,
-      app
+      app,
     } = this;
-    let id = ctx.request.query.id || ctx.request.body.id || 0;
-    let username = ctx.request.query.username || ctx.request.body.username;
+    const id = ctx.request.query.id || ctx.request.body.id || 0;
+    const username = ctx.request.query.username || ctx.request.body.username;
     if (!username) {
       return ctx.jsonReturn(992, null, '参数有误');
     }
-    let res = await ctx.model.User.checkUnique(username, id);
+    const res = await ctx.model.User.checkUnique(username, id);
     return ctx.jsonReturn(0, {
-      isUnique: res
+      isUnique: res,
     }, 'Successfully');
   }
 
 }
-
 
 
 module.exports = UserController;

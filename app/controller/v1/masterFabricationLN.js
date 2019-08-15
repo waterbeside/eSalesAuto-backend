@@ -18,7 +18,7 @@ class MasterFabricationLNController extends BaseController {
 
 
   async getCustomerFabCodes() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const cacheKey = 'master:fabricationLN:customer_fab_codes';
     const cacheData = await ctx.helper.getStoreData(cacheKey);
     if (cacheData) {

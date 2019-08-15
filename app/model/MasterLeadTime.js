@@ -2,7 +2,7 @@
 
 const moment = require('moment');
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { INTEGER } = app.Sequelize;
 
   const MasterLeadTime = app.model.define('Master_leadTime',
     {

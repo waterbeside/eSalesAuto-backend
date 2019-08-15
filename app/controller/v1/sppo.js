@@ -12,7 +12,7 @@ class SppoController extends BaseController {
    * SPPO列表
    */
   async index() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const ppo_no = ctx.request.query.ppo_no;
     const season = ctx.request.query.season;
     const date_start = ctx.request.query.date_start ? parseInt(ctx.request.query.date_start) : 0;
@@ -64,7 +64,7 @@ class SppoController extends BaseController {
       return ctx.jsonReturn(20002, { list: [], pagination }, 'No data');
     }
 
-    const list = res.map((item, index) => {
+    const list = res.map(item => {
       const newItem = Object.assign(item.dataValues);
       newItem.Create_Time = moment(item.Create_Time).valueOf();
       newItem.Update_Time = moment(item.Update_Time).valueOf();
@@ -82,7 +82,7 @@ class SppoController extends BaseController {
    * 验证 customer_fab_code 是否存在
    */
   async checkCustomerFabCodeExist() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Customer_Fab_Code = ctx.request.query.customer_fab_code;
     const where = {
       Customer_Fab_Code,
@@ -98,7 +98,7 @@ class SppoController extends BaseController {
    *  取得customer_fab_code列表
    */
   async getCustomerFabCodes() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const cacheKey = 'sppo:customer_fab_codes';
     const cacheData = await ctx.helper.getStoreData(cacheKey);
     if (cacheData) {
@@ -146,16 +146,16 @@ class SppoController extends BaseController {
    * 添加SPPO
    */
   async save() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const data = ctx.request.body.data;
     const customer_code = ctx.request.body.customer_code;
     const brand = ctx.request.body.brand;
     const garment_fty = ctx.request.body.garment_fty;
-    const successStyleNoList = [];
+    // const successStyleNoList = [];
     const errorStyleNoList = [];
-    const errorIndex = [];
+    // const errorIndex = [];
     const errorMsgList = {};
     let hasError = 0;
     let errMsg = '';
@@ -184,7 +184,7 @@ class SppoController extends BaseController {
     // 查找所有style_no
     const style_no_kv_list = _.groupBy(data, 'style_no');
     const style_no_array = [];
-    const style_no_checkExist = {};
+    // const style_no_checkExist = {};
 
     // console.log(style_no_array);
     // console.log(style_no_checkExist);
@@ -192,7 +192,7 @@ class SppoController extends BaseController {
     const Delivery = await ctx.model.MasterLeadTime.getDeliveryByCC(customer_code);// 计算交期
     const Ship_Mode = await ctx.model.MasterShipMode.getShipModeByCC(customer_code);// 取得Ship_Mode
     const sppoTitleData_list_old = {};
-    const data_sppoTitle_batch = [];
+    // const data_sppoTitle_batch = [];
     for (const style_no in style_no_kv_list) {
       const dataList = style_no_kv_list[style_no];
       // 验证重复的 Garment_Part Customer_Fab_Code;
@@ -679,7 +679,7 @@ class SppoController extends BaseController {
    * 编辑
    */
   async edit() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const Delivery = ctx.request.body.delivery;
@@ -692,8 +692,8 @@ class SppoController extends BaseController {
     const userData = await this.getUserData();
     const username = userData.username;
 
-    const errorMsg = '';
-    const hasError = 0;
+    // const errorMsg = '';
+    // const hasError = 0;
     let errorData = {};
     if (!PPO_NO) {
       return ctx.jsonReturn(-1, { errorData }, '请选择要修改的数据');
@@ -894,7 +894,7 @@ class SppoController extends BaseController {
    * 批量编辑
    */
   async batchEdit() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const Op = ctx.model.Op;
 
     const delivery = ctx.request.body.delivery;
@@ -934,7 +934,7 @@ class SppoController extends BaseController {
         const sppoData = sppoDataList[PPO_NO];
         const sppoTitleData_old = sppoData.sppoTitle;
         const Style_No = sppoTitleData_old.Style_No;
-        const PPO_ID_old = sppoTitleData_old.PPO_ID;
+        // const PPO_ID_old = sppoTitleData_old.PPO_ID;
         const Rev_NO_new = parseInt(sppoTitleData_old.Rev_NO) + 1;
         const PPO_ID_new = PPO_NO + '-' + Rev_NO_new;
         /** ********* SPPO_title ******/
@@ -962,7 +962,7 @@ class SppoController extends BaseController {
         // 2) SPPO_GP_Del_Destination_Info
         const sppoGpDelDest_lst = sppoData.sppoGpDelDest;
         if (sppoGpDelDest_lst && sppoGpDelDest_lst.length > 0) {
-          const sppoGpDelDest_lst_batchData = sppoGpDelDest_lst.map((rItem, index) => {
+          const sppoGpDelDest_lst_batchData = sppoGpDelDest_lst.map(rItem => {
             const newItem = Object.assign({}, rItem.dataValues);
             newItem.PPO_ID = PPO_ID_new;
             newItem.Delivery = moment(delivery).format('YYYY-MM-DD');
@@ -980,7 +980,7 @@ class SppoController extends BaseController {
         // 5) SPPO_Color_Qty_Info
         const sppoColorQty_lst = sppoData.sppoColorQty;
         if (sppoColorQty_lst && sppoColorQty_lst.length > 0) {
-          const sppoColorQty_lst_batchData = sppoColorQty_lst.map((rItem, index) => {
+          const sppoColorQty_lst_batchData = sppoColorQty_lst.map(rItem => {
             const newItem = Object.assign({}, rItem.dataValues);
             newItem.PPO_ID = PPO_ID_new;
             delete (newItem.ID);
@@ -995,7 +995,7 @@ class SppoController extends BaseController {
         // 3) SPPO_Fabrication
         const sppoFabrication_lst = sppoData.sppoFabrication;
         if (sppoFabrication_lst && sppoFabrication_lst.length > 0) {
-          const sppoFabrication_lst_batchData = sppoFabrication_lst.map((rItem, index) => {
+          const sppoFabrication_lst_batchData = sppoFabrication_lst.map(rItem => {
             const newItem = Object.assign({}, rItem.dataValues);
             newItem.PPO_ID = PPO_ID_new;
             delete (newItem.ID);
@@ -1010,7 +1010,7 @@ class SppoController extends BaseController {
         // 4) SPPO_Collar_Cuff
         const sppoCollarCuff_lst = sppoData.sppoCollarCuff;
         if (sppoCollarCuff_lst && sppoCollarCuff_lst.length > 0) {
-          const sppoCollarCuff_lst_batchData = sppoCollarCuff_lst.map((rItem, index) => {
+          const sppoCollarCuff_lst_batchData = sppoCollarCuff_lst.map(rItem => {
             const newItem = Object.assign({}, rItem.dataValues);
             newItem.PPO_ID = PPO_ID_new;
             delete (newItem.ID);
@@ -1040,7 +1040,7 @@ class SppoController extends BaseController {
    * 详情
    */
   async detail() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const PPO_NO = ctx.request.query.ppo_no;
 
     let data = {};
@@ -1052,7 +1052,7 @@ class SppoController extends BaseController {
     const PPO_ID = data.sppoTitle.PPO_ID;
     data.itemList = [];
 
-    data.sppoColorQty.forEach((item, index) => {
+    data.sppoColorQty.forEach(item => {
       const newItem = {};
       newItem.sppoColorQty = item;
       const sppoGpDelDest = _.filter(data.sppoColorQty, { PPO_ID, Garment_Part: item.Garment_Part });
@@ -1073,14 +1073,14 @@ class SppoController extends BaseController {
    * 删除数据
    */
   async del() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
 
     if (!ids) {
       return ctx.jsonReturn(-1, '请选择要删除的数据');
     }
-    const userData = await this.getUserData();
-    const username = userData.username;
+    // const userData = await this.getUserData();
+    // const username = userData.username;
 
     const idsArray = ids.toString().split(',');
 

@@ -64,7 +64,6 @@ module.exports = app => {
 
   // 通过Style_NO查数据
   SppoTitle.findByStyleNo = async function(Style_No, Is_Active = 1) {
-    const Op = app.Sequelize.Op;
     return await this.findOne({
       where: {
         Style_No,
@@ -76,7 +75,6 @@ module.exports = app => {
   // 通过
   SppoTitle.buildSerialNo = async function(setting = {}) {
     const Op = app.Sequelize.Op;
-    const sequelize = app.Sequelize;
     const start = moment().format('YYYY-01-01 00:00:00');
     const end = moment(start).add(1, 'y').format('YYYY-01-01 00:00:00');
     const order = [

@@ -4,7 +4,7 @@
  */
 
 module.exports = app => {
-  const { STRING, INTEGER, DATE } = app.Sequelize;
+  const { STRING, INTEGER } = app.Sequelize;
 
   const SppoColorQtyInfo = app.model.define('SPPO_Color_Qty_Info',
     {

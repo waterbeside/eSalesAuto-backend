@@ -7,11 +7,8 @@ class FabFabricTypeController extends BaseController {
     const { ctx } = this;
     const garment_part = ctx.request.query.garment_part;
     const res = await ctx.service.fabFabricType.checkExistByFabricTypeCode(garment_part);
-
     return ctx.jsonReturn(0, { is_exist: res }, 'Successfully');
-
   }
-
 
 }
 
