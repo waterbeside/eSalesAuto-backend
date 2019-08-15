@@ -14,3 +14,4 @@ config/secret.js
 typings/
 .nyc_output/
 /test/test_*.js
+/.vscode
