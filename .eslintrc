@@ -2,6 +2,5 @@
   "extends": "eslint-config-egg",
   "parser": "babel-eslint",
   "rules": {
-    "no-unused-vars": 0
   }
 }
