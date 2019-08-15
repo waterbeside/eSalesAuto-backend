@@ -21,7 +21,7 @@ exports.oracle = {
 };
 
 exports.redis = {
-  enable: false,
+  enable: true,
   package: 'egg-redis',
 };
 
