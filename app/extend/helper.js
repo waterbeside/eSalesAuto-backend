@@ -100,6 +100,57 @@ module.exports = {
 
 
   /**
+   * 缓存
+   * @param {String|Object} key String:缓存的key, 当为Object时为缓存设置，再使用返回的run方法执行
+   * @param {*} value 要值存的数据
+   * @param {Integer} ex 有效时长
+   * @param {String} prefix 缓存的key的前缀.
+   */
+  cache(key, value = false, ex = 0, prefix = 'autoSale') {
+    if (typeof key === 'object') {
+      let setting = key;
+      const defaults = {
+        prefix: 'autoSale',
+        app: this.app,
+      };
+      setting = Object.assign({}, defaults, setting);
+      return {
+        run: async (key, value = false, ex = 0) => {
+          key = setting.prefix + ':' + key;
+          if (typeof (setting.app.redis) === 'object') {
+            const redis = setting.app.redis;
+            if (value === null) {
+              // 删缓存
+              return await redis.delete(key);
+            } else if (value !== false) {
+              // 写缓存
+              const dataString = JSON.stringify(value);
+              if (ex > 0) {
+                return await redis.setex(key, ex, dataString);
+              }
+              return await redis.set(key, value);
+            }
+            // 取缓存
+            const str = await redis.get(key);
+            const redData = str !== false ? JSON.parse(str, true) : false;
+            return redData;
+          }
+          return false;
+        },
+      };
+    }
+    return new Promise((resole, reject) => {
+      this.cache({ prefix }).run(key, value, ex).then(res => {
+        resole(res);
+      })
+        .catch(err => {
+          reject(err);
+        });
+    });
+  },
+
+
+  /**
    * 验证工具
    */
   validate: {
@@ -112,7 +163,6 @@ module.exports = {
 
     isNoSpecialBut_(str) {
       const reg = /^[a-zA-Z0-9_]{1,}$/;
-      console.log(str);
       return reg.test(str);
     },
 
