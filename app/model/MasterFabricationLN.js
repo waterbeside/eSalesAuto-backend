@@ -3,6 +3,7 @@
  * Master_Fabrication_LN (面料具体信息)
  */
 
+const helper = require('../extend/helper');
 module.exports = app => {
   const { STRING, INTEGER } = app.Sequelize;
 
@@ -35,6 +36,30 @@ module.exports = app => {
       timestamps: false,
     }
   );
+
+  /**
+   * 通过用Customer_Fab_Code查数据
+   * @param {String} cfcd Customer_Fab_Code
+   * @param {Integer} exp 缓存时间
+   */
+  MasterFabricationLN.findByCfcd = async function(cfcd, exp = 1800) {
+    const cacheKey = 'm1:master_fabrication_ln:cfcd_' + cfcd;
+    if (typeof (exp) === 'number' && exp > -1) {
+      const cacheData = await helper.cache({ app }).run(cacheKey);
+      if (cacheData) {
+        return cacheData;
+      }
+    }
+    const res = await this.findOne({
+      where: {
+        Customer_Fab_Code: cfcd,
+      },
+    });
+    if (res && typeof (exp) === 'number' && exp > -1) {
+      await helper.cache({ app }).run(cacheKey, res, exp);
+    }
+    return res;
+  };
 
   return MasterFabricationLN;
 };

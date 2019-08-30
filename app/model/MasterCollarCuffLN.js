@@ -2,11 +2,11 @@
 /**
  * Master_Collar_Cuff_LN (领袖具体信息)
  */
-
+const helper = require('../extend/helper');
 module.exports = app => {
   const { STRING, INTEGER } = app.Sequelize;
 
-  const SppoCollarCuff = app.model.define('Master_Collar_Cuff_LN',
+  const MasterCollarCuffLN = app.model.define('Master_Collar_Cuff_LN',
     {
       ID: {
         type: INTEGER,
@@ -32,5 +32,29 @@ module.exports = app => {
     }
   );
 
-  return SppoCollarCuff;
+  /**
+   * 通过Customer_Fab_Code 查数据
+   * @param {String} Customer_Fab_Code Customer_Fab_Code
+   * @param {Integer} exp 缓存时间
+   */
+  MasterCollarCuffLN.findByCfcd = async function(Customer_Fab_Code, exp = 1800) {
+    const cacheKey = 'm1:master_collar_cuff_ln:cfcd_' + Customer_Fab_Code;
+    if (typeof (exp) === 'number' && exp > -1) {
+      const cacheData = await helper.cache({ app }).run(cacheKey);
+      if (cacheData) {
+        return cacheData;
+      }
+    }
+    const res = await this.findOne({
+      where: {
+        Customer_Fab_Code,
+      },
+    });
+    if (res && typeof (exp) === 'number' && exp > -1) {
+      await helper.cache({ app }).run(cacheKey, res, exp);
+    }
+    return res;
+  };
+
+  return MasterCollarCuffLN;
 };
