@@ -14,4 +14,8 @@ module.exports = app => {
   // 用户通行证模块
   router.post('/api/v2/passport/login', controller.v2.passport.login);
 
+  // SPPO模块
+  router.post('/api/v2/sppo', permission([ 'master', 'general' ]), controller.v2.sppo.save); // 新建
+
+
 };
