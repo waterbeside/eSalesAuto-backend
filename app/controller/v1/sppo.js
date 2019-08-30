@@ -101,8 +101,10 @@ class SppoController extends BaseController {
     const { ctx } = this;
     const cacheKey = 'sppo:customer_fab_codes';
     const cacheData = await ctx.helper.getStoreData(cacheKey);
+    console.log(cacheData);
+
     if (cacheData) {
-      return cacheData;
+      return ctx.jsonReturn(0, { list: cacheData }, 'Successfully');
     }
 
     const list = [];
@@ -188,7 +190,7 @@ class SppoController extends BaseController {
 
     // console.log(style_no_array);
     // console.log(style_no_checkExist);
-    const basePpoNo = await ctx.service.sppo.buildBasePpoNo(Creater);
+    const basePpoNo = await ctx.service.sppoHelper.buildBasePpoNo(Creater);
     const Delivery = await ctx.model.MasterLeadTime.getDeliveryByCC(customer_code);// 计算交期
     const Ship_Mode = await ctx.model.MasterShipMode.getShipModeByCC(customer_code);// 取得Ship_Mode
     const sppoTitleData_list_old = {};
@@ -196,7 +198,7 @@ class SppoController extends BaseController {
     for (const style_no in style_no_kv_list) {
       const dataList = style_no_kv_list[style_no];
       // 验证重复的 Garment_Part Customer_Fab_Code;
-      if (!ctx.service.sppo.check_gp_cfc_same(dataList)) {
+      if (!ctx.service.sppoHelper.check_gp_cfc_same(dataList)) {
         hasError = 1;
         errMsg = "'相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交'";
         break;
@@ -297,8 +299,8 @@ class SppoController extends BaseController {
           const Customer_Fab_Code = item.customer_fab_code;
           const Garment_Part = item.garment_part;
 
-          const Unit = await ctx.service.sppo.getUnitByGP(Garment_Part);
-          const masterQtyData = await ctx.service.sppo.getMasterQtyData(Garment_Part); // 先通过garmaent_part查是body还是领袖
+          const Unit = await ctx.service.sppoHelper.getUnitByGP(Garment_Part);
+          const masterQtyData = await ctx.service.sppoHelper.getMasterQtyData(Garment_Part); // 先通过garmaent_part查是body还是领袖
           if (!masterQtyData) {
             errorStyleNoList.push(style_no);
             throw new Error('Garment_Part Error: empty Master_Qty data');
@@ -348,7 +350,7 @@ class SppoController extends BaseController {
           const sppoFabrication_pkey = 'CFC_' + Customer_Fab_Code;
           if (Garment_Part_CD === 'B' && !sppoFabrication_hasPush.includes(sppoFabrication_pkey)) {
             // 3)	SPPO_Fabrication(面料具体信息)
-            const master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(Customer_Fab_Code);
+            const master_fab_data_item = await ctx.service.sppoHelper.getMasterFabDataByFC(Customer_Fab_Code);
             if (!master_fab_data_item) {
               errorStyleNoList.push(style_no);
               throw new Error('生成 SPPO_Fabrication 数据失败，customer_fab_code：' + Customer_Fab_Code + "找不到对应的Master_collar_cuff数据'");
@@ -383,7 +385,7 @@ class SppoController extends BaseController {
           const sppoCollarCuff_pkey = 'CFC_' + Customer_Fab_Code;
           if (Garment_Part_CD === 'C' && !sppoCollarCuff_hasPush.includes(sppoCollarCuff_pkey)) {
             // 4)	SPPO_Collar_Cuff (领袖具体信息)
-            const master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(Customer_Fab_Code);
+            const master_collarCuff_data_item = await ctx.service.sppoHelper.getMasterCollarCuffDataByFC(Customer_Fab_Code);
             if (!master_collarCuff_data_item) {
               errorStyleNoList.push(style_no);
               throw new Error('生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：' + Customer_Fab_Code + '找不到对应的Master_collar_cuff数据');
@@ -519,9 +521,9 @@ class SppoController extends BaseController {
     //       try {
     //         // 处理Gament_part
     //         // 2)	SPPO_GP_Del_Destination_Info(SPPO Garment Part, 客户面料Code，Delivery，Destination信息)
-    //         let oldGPItemData = await ctx.service.sppo.getSppoGpDelDesData(item.garment_part,PPO_ID);
+    //         let oldGPItemData = await ctx.service.sppoHelper.getSppoGpDelDesData(item.garment_part,PPO_ID);
     //         if(!oldGPItemData){
-    //           let Unit = await ctx.service.sppo.getUnitByGP(item.garment_part);
+    //           let Unit = await ctx.service.sppoHelper.getUnitByGP(item.garment_part);
     //           let sppo_GP_data_item = {
     //             PPO_ID,
     //             Garment_Part:item.garment_part,
@@ -539,7 +541,7 @@ class SppoController extends BaseController {
     //         }
 
     //         // 5)	SPPO_Color_Qty_Info (颜色数量信息)
-    //         let masterQtyData = await ctx.service.sppo.getMasterQtyData(item.garment_part); //先通过garmaent_part查是body还是领袖
+    //         let masterQtyData = await ctx.service.sppoHelper.getMasterQtyData(item.garment_part); //先通过garmaent_part查是body还是领袖
     //         if(!masterQtyData){
     //           errorMsgList[style_no][i] = 'Garment_Part:'+item.garment_part+' 有误';
     //           hasError = 1;
@@ -547,7 +549,7 @@ class SppoController extends BaseController {
     //           throw new Error(errorMsgList[style_no][i]);
     //         }
     //         let Garment_Part_CD = masterQtyData.Garment_Part_CD;
-    //         let oldColorQtyItemData = await ctx.service.sppo.getSppoColorQtyData(item.garment_part,PPO_ID);
+    //         let oldColorQtyItemData = await ctx.service.sppoHelper.getSppoColorQtyData(item.garment_part,PPO_ID);
     //         if(!oldColorQtyItemData){
     //           let color_combo_no = item.color_combo.substring(0,2);
     //           let sppo_color_qty_data_item = {
@@ -567,9 +569,9 @@ class SppoController extends BaseController {
 
     //         if(Garment_Part_CD == 'B') {
     //           //3)	SPPO_Fabrication(面料具体信息)
-    //           let oldFabData = await ctx.service.sppo.getSppoFabData(item.customer_fab_code,PPO_ID);
+    //           let oldFabData = await ctx.service.sppoHelper.getSppoFabData(item.customer_fab_code,PPO_ID);
     //           if(!oldFabData){
-    //             let master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(item.customer_fab_code);
+    //             let master_fab_data_item = await ctx.service.sppoHelper.getMasterFabDataByFC(item.customer_fab_code);
     //             if(!master_fab_data_item){
     //               errorMsgList[style_no][i] = '生成 SPPO_Fabrication 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
     //               hasError = 1;
@@ -607,9 +609,9 @@ class SppoController extends BaseController {
 
     //         if(Garment_Part_CD == 'C') {
     //           // 4)	SPPO_Collar_Cuff (领袖具体信息)
-    //           let oldCollarCuffData = await ctx.service.sppo.getSppoCollarCuffData(item.customer_fab_code,PPO_ID);
+    //           let oldCollarCuffData = await ctx.service.sppoHelper.getSppoCollarCuffData(item.customer_fab_code,PPO_ID);
     //           if(!oldCollarCuffData){
-    //             let master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(item.customer_fab_code);
+    //             let master_collarCuff_data_item = await ctx.service.sppoHelper.getMasterCollarCuffDataByFC(item.customer_fab_code);
     //             if(!master_collarCuff_data_item){
     //               errorMsgList[style_no][i] = '生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：'+item.customer_fab_code+'找不到对应的Master_collar_cuff数据';
     //               hasError = 1;
@@ -700,13 +702,13 @@ class SppoController extends BaseController {
     }
 
     // 验证重复的 Garment_Part Customer_Fab_Code;
-    if (!ctx.service.sppo.check_gp_cfc_same(dataList)) {
-      errorData = (ctx.service.sppo.errorData);
+    if (!ctx.service.sppoHelper.check_gp_cfc_same(dataList)) {
+      errorData = (ctx.service.sppoHelper.errorData);
       return ctx.jsonReturn(-1, { errorData }, '相同Style_No, 相同Garment_Part, 只可以出现一个Customer_Fab_Code，请重新检查再提交');
     }
 
     // 查出旧数据
-    const sppoData = await ctx.service.sppo.getDetail(PPO_NO);
+    const sppoData = await ctx.service.sppoHelper.getDetail(PPO_NO);
     if (!sppoData) {
       return ctx.jsonReturn(20002, '数据不存在或已被删除');
     }
@@ -748,9 +750,9 @@ class SppoController extends BaseController {
       for (const i in dataList) {
         const item = dataList[i];
 
-        const Unit = await ctx.service.sppo.getUnitByGP(item.Garment_Part);
+        const Unit = await ctx.service.sppoHelper.getUnitByGP(item.Garment_Part);
 
-        const masterQtyData = await ctx.service.sppo.getMasterQtyData(item.Garment_Part); // 先通过garmaent_part查是body还是领袖
+        const masterQtyData = await ctx.service.sppoHelper.getMasterQtyData(item.Garment_Part); // 先通过garmaent_part查是body还是领袖
         if (!masterQtyData) {
           throw new Error('Garment_Part Error: empty Master_Qty data');
         }
@@ -801,7 +803,7 @@ class SppoController extends BaseController {
         const sppoFabrication_pkey = 'CFC_' + Customer_Fab_Code;
         if (Garment_Part_CD === 'B' && !sppoFabrication_hasPush.includes(sppoFabrication_pkey)) {
           // 3)	SPPO_Fabrication(面料具体信息)
-          const master_fab_data_item = await ctx.service.sppo.getMasterFabDataByFC(item.Customer_Fab_Code);
+          const master_fab_data_item = await ctx.service.sppoHelper.getMasterFabDataByFC(item.Customer_Fab_Code);
 
           if (!master_fab_data_item) {
             throw new Error('生成 SPPO_Fabrication 数据失败，customer_fab_code：' + item.Customer_Fab_Code + "找不到对应的Master_collar_cuff数据'");
@@ -836,7 +838,7 @@ class SppoController extends BaseController {
         const sppoCollarCuff_pkey = 'CFC_' + Customer_Fab_Code;
         if (Garment_Part_CD === 'C') {
           // 4)	SPPO_Collar_Cuff (领袖具体信息)
-          const master_collarCuff_data_item = await ctx.service.sppo.getMasterCollarCuffDataByFC(item.Customer_Fab_Code);
+          const master_collarCuff_data_item = await ctx.service.sppoHelper.getMasterCollarCuffDataByFC(item.Customer_Fab_Code);
           if (!master_collarCuff_data_item) {
             throw new Error('生成 SPPO_Collar_Cuff 数据失败，customer_fab_code：' + item.Customer_Fab_Code + '找不到对应的Master_collar_cuff数据');
           }
@@ -917,7 +919,7 @@ class SppoController extends BaseController {
     const sppoDataList = {};
     for (const i in ppo_nos) {
       const PPO_NO = ppo_nos[i];
-      const sppoData = await ctx.service.sppo.getDetail(PPO_NO);
+      const sppoData = await ctx.service.sppoHelper.getDetail(PPO_NO);
       if (!sppoData) {
         hasError = 1;
         errorMsg = 'PPO_NO：' + PPO_NO + '对应的SPPO不存在，请重新选择后再试';
@@ -1044,7 +1046,7 @@ class SppoController extends BaseController {
     const PPO_NO = ctx.request.query.ppo_no;
 
     let data = {};
-    const res = await ctx.service.sppo.getDetail(PPO_NO);
+    const res = await ctx.service.sppoHelper.getDetail(PPO_NO);
     if (!res) {
       return ctx.jsonReturn(20002, {}, 'NO Data');
     }

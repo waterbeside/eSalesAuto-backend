@@ -3,11 +3,11 @@
 const moment = require('moment');
 const _ = require('lodash');
 const Service = require('egg').Service;
-class SppoService extends Service {
+class SppoHelperService extends Service {
 
   // 取得Unit数据
   async getUnitByGP(garment_part) {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const cacheKey = 'sppo:master_unit:garmentPart_' + garment_part;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
     if (cacheData) {
@@ -23,7 +23,7 @@ class SppoService extends Service {
 
   // 2）
   async getSppoGpDelDesData(Garment_Part, PPO_ID) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:sppo_gp_del_des:ppoId_' + PPO_ID + '_garmentPart_' + Garment_Part;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -45,7 +45,7 @@ class SppoService extends Service {
 
   // 5)
   async getMasterQtyData(Garment_Part) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:master_qty:garmentPart_' + Garment_Part;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -67,7 +67,7 @@ class SppoService extends Service {
 
   // 5 getSppoColorQtyData
   async getSppoColorQtyData(Garment_Part, PPO_ID) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:sppo_color_qty:ppoId_' + PPO_ID + '_garmentPart_' + Garment_Part;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -90,7 +90,7 @@ class SppoService extends Service {
 
   // 3）
   async getMasterFabDataByFC(Customer_Fab_Code) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:master_fab:cfc_' + Customer_Fab_Code;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -109,7 +109,7 @@ class SppoService extends Service {
 
   // 3）
   async getSppoFabData(Customer_Fab_Code, PPO_ID) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:sppo_fab:cfc_' + Customer_Fab_Code + '_sppoID_' + PPO_ID;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -132,7 +132,7 @@ class SppoService extends Service {
 
   // 4）
   async getMasterCollarCuffDataByFC(Customer_Fab_Code) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:master_collar_cuff:cfc_' + Customer_Fab_Code;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -151,7 +151,7 @@ class SppoService extends Service {
 
   // 4）
   async getSppoCollarCuffData(Customer_Fab_Code, PPO_ID) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const cacheKey = 'sppo:sppo_collar_cuff:cfc_' + Customer_Fab_Code + '_sppoID_' + PPO_ID;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
@@ -174,7 +174,7 @@ class SppoService extends Service {
 
   // get sppoDetail
   async getDetail(ppo_no) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const data = {};
     data.sppoTitle = await ctx.model.SppoTitle.findOne({
@@ -190,7 +190,7 @@ class SppoService extends Service {
       return null;
     }
     const PPO_ID = data.sppoTitle.PPO_ID;
-    const PPO_NO = data.sppoTitle.PPO_NO;
+    // const PPO_NO = data.sppoTitle.PPO_NO;
     data.sppoTitle.setDataValue('Create_Time', moment(data.sppoTitle.Create_Time).valueOf());
     data.sppoTitle.setDataValue('Update_Time', moment(data.sppoTitle.Update_Time).valueOf());
 
@@ -237,7 +237,7 @@ class SppoService extends Service {
    * @param {string} username 用户名
    */
   async buildBasePpoNo(username) {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const cacheKey = 'sppo:basePpoNo:user_' + username;
     const cacheData = await ctx.helper.getStoreData(cacheKey);
     if (cacheData) {
@@ -261,7 +261,7 @@ class SppoService extends Service {
    * 创建一个 PPO_NO
    */
   async buildPpoNo() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const res = await ctx.model.SppoTitle.buildSerialNo();
     if (!res) {
       return false;
@@ -274,7 +274,7 @@ class SppoService extends Service {
 
   // 验证重复的 Garment_Part Customer_Fab_Code;
   check_gp_cfc_same(dataList) {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     let hasError = 0;
     this.errorData = typeof (this.errorData) !== 'undefined' ? this.errorData : {};
@@ -301,6 +301,57 @@ class SppoService extends Service {
     return !hasError;
   }
 
+  // ****************************** V2 ******************************
+
+
+  async findMstFabAndCcByCfcAndGP(customer_fab_code, garment_part) {
+    const returnData = {
+      masterFabData: {
+        ID: 0,
+        Customer_Fab_Code: '',
+        Refer_PPO_Usage: '',
+        Fab_Type: '',
+        Fab_Pattern: '',
+        Fab_Width: '',
+        Finishing: '',
+        Dye_Method: '',
+        Weight_BW: 0,
+        Weight_AW: 0,
+        Yarn_Count: '',
+        Yarn_Strands: '',
+        Yarn_Ratio: '',
+        Yarn_Type: '',
+        Fab_Desc: '',
+        Fab_Remark: '',
+      },
+      masterCollarCuffData: {
+        ID: 0,
+        Customer_Fab_Code: '',
+        Refer_PPO_Usage: '',
+        CC_Type: '',
+        Size: '',
+        Finishing: '',
+        Dye_Method: '',
+        Yarn_Count: '',
+        Yarn_Strands: '',
+        Yarn_Ratio: '',
+        Yarn_Type: '',
+        CC_Desc: '',
+        CC_Remark: '',
+      },
+    };
+    if ([ 'O', 'C' ].includes(garment_part)) {
+      const masterCollarCuffData = await this.ctx.model.MasterCollarCuffLN.findByCfcd(customer_fab_code);
+      returnData.masterCollarCuffData = masterCollarCuffData;
+      returnData.mergData = Object.assign({}, returnData.masterFabData, masterCollarCuffData);
+    } else {
+      const masterFabData = await this.ctx.model.MasterFabricationLN.findByCfcd(customer_fab_code);
+      returnData.masterFabData = masterFabData;
+      returnData.mergData = Object.assign({}, returnData.masterCollarCuffData, masterFabData);
+    }
+    return returnData;
+  }
+
 }
 
-module.exports = SppoService;
+module.exports = SppoHelperService;
