@@ -51,6 +51,7 @@ module.exports = app => {
 
   // brand
   router.get('/api/v1/gen_brand/get_brand_code', permission([ 'master', 'general' ]), controller.v1.genBrand.getBrandCode);
+  router.get('/api/v1/gen_brand/get_label', permission([ 'master', 'general' ]), controller.v1.genBrand.getLabel);
   // factory
   router.get('/api/v1/gen_factory/get_factory_ids', permission([ 'master', 'general' ]), controller.v1.genFactory.getFactoryIds);
   // washType
