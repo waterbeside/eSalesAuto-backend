@@ -24,14 +24,30 @@ class GenUsersService extends BaseService {
    * @param {String} username 用户名
    * @param {Boolean} getActive 是否只取在职
    * @param {String} field 要查的字段，默认全部
+   * @param {Boolean|Integer} exp 缓存时间,秒为单位，当为false时，不缓存
    */
-  async getDataByUsername(username, getActive = false, field = '*') {
+  async getDataByUsername(username, getActive = false, field = '*', exp = false) {
+    let cacheKey = 'm2:genUsers:un:' + username;
+    if (getActive && field !== '*') {
+      cacheKey += '_' + this.ctx.helper.md5(field + (getActive ? '1' : '0'));
+    }
+    if (typeof (exp) === 'number' && exp > -1) {
+      const cacheData = await this.ctx.helper.cache(cacheKey);
+      if (cacheData) {
+        return cacheData;
+      }
+    }
     let where = "USER_ID = '" + username + "'";
     if (getActive) {
       where += " AND ACTIVE = 'Y'";
     }
     const sql = 'SELECT ' + field + ' FROM escmowner.GEN_USERS WHERE ' + where + ' ORDER BY USER_ID OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY';
-    return await this.query('model2', sql);
+    const res = await this.query('model2', sql, 1);
+    if (typeof (exp) === 'number' && exp > -1) {
+      await this.ctx.helper.cache(cacheKey, res, exp);
+    }
+    return res;
+
   }
 }
 

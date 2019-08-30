@@ -2,6 +2,21 @@
 
 // had enabled by egg
 // exports.static = true;
+exports.redis = {
+  enable: true,
+  package: 'egg-redis',
+};
+
+exports.cors = {
+  enable: true,
+  package: 'egg-cors',
+};
+
+exports.http = {
+  enable: true,
+  package: 'egg-axios',
+};
+
 exports.jwt = {
   enable: true,
   package: 'egg-jwt',
@@ -18,16 +33,6 @@ exports.mssql = {
 exports.oracle = {
   enable: false,
   package: 'egg-oracle',
-};
-
-exports.redis = {
-  enable: true,
-  package: 'egg-redis',
-};
-
-exports.cors = {
-  enable: true,
-  package: 'egg-cors',
 };
 
 exports.passport = {

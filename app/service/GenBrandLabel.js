@@ -4,7 +4,8 @@
 const BaseService = require('./Base');
 // const Service = require('egg').Service;
 class GenBrandLabelService extends BaseService {
-  async getBrandCDByCustomerCode(customer_code) {
+
+  async getBrandCDByCustomerCode(customer_code, exp = 60 * 20) {
     // console.log(this.app.oracle);
 
     // const connection = await this.app.oracle.getConnection();
@@ -14,21 +15,38 @@ class GenBrandLabelService extends BaseService {
     // console.log(this.formatOracleRes(res))
     // return this.formatOracleRes(res);
 
+    const cacheKey = 'm2:gen_brand_label:brand_cd:ccd_' + customer_code;
+    if (typeof (exp) === 'number' && exp > -1) {
+      const cacheData = await this.ctx.helper.cache(cacheKey);
+      if (cacheData) {
+        return cacheData;
+      }
+    }
     const sql = "SELECT DISTINCT CUSTOMER_CD, BRAND_CD FROM [escmowner].[GEN_BRAND_LABEL] WHERE CUSTOMER_CD = '" + customer_code + "'  AND ACTIVE='Y' ORDER BY BRAND_CD ASC";
-    const res = await this.ctx.model2.query(sql);
-    return res[0];
-
-
+    const queryRes = await this.ctx.model2.query(sql);
+    const res = queryRes[0];
+    if (res && typeof (exp) === 'number' && exp > -1) {
+      await this.ctx.helper.cache(cacheKey, res, exp);
+    }
+    return res;
   }
 
-  async findBandByCustomerCode(customer_code) {
-    // console.log(typeof(this.ctx.model.SppoTitle.findById));
-    const res = await this.findAllByCustomerCode(customer_code);
-    const returnData = [];
-    res.forEach(element => {
-      returnData.push(element.BRAND_CD);
-    });
-    return returnData;
+  async findAllByCcdAndBcd(customer_cd, brand_cd, exp = 60 * 20) {
+    const cacheKey = 'm2:gen_brand_label:ccd_' + customer_cd + '_bcd_' + brand_cd;
+    if (typeof (exp) === 'number' && exp > -1) {
+      const cacheData = await this.ctx.helper.cache(cacheKey);
+      if (cacheData) {
+        return cacheData;
+      }
+    }
+    const map = " CUSTOMER_CD = '" + customer_cd + "' AND BRAND_CD = '" + brand_cd + "' AND ACTIVE='Y' ";
+    const sql = 'SELECT CUSTOMER_CD, BRAND_CD, LABEL_CD, LABEL_DESC FROM [escmowner].[GEN_BRAND_LABEL] WHERE ' + map + "  AND ACTIVE='Y' ORDER BY BRAND_CD ASC";
+    const queryRes = await this.ctx.model2.query(sql);
+    const res = queryRes[0];
+    if (res && typeof (exp) === 'number' && exp > -1) {
+      await this.ctx.helper.cache(cacheKey, res, exp);
+    }
+    return res;
   }
 }
 

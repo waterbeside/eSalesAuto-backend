@@ -26,19 +26,20 @@ class BaseService extends Service {
   }
 
 
-  async query(model, sql) {
+  async query(model, sql, isFind = 0) {
+
     try {
       if ([ 'model', 'model2' ].includes(model)) {
         const res = await this.ctx[model].query(sql);
-        return res[0][0];
+        return isFind === 1 ? res[0][0] : res[0];
       }
       if (model === 'oracle') {
         const connection = await this.app.oracle.getConnection();
-        let res = await connection.execute(sql);
+        const res = await connection.execute(sql);
         await connection.close();
-        res = this.formatOracleRes(res);
-        return res;
+        return isFind === 1 ? this.formatOracleRes(res)[0] : this.formatOracleRes(res);
       }
+      return false;
     } catch (err) {
       console.log(err.message);
     }
