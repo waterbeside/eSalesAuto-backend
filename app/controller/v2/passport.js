@@ -1,5 +1,4 @@
 'use strict';
-const moment = require('moment');
 
 // const Controller = require('egg').Controller;
 const BaseController = require('../Base');
@@ -61,5 +60,5 @@ class PassportController extends BaseController {
   }
 
 }
-console.log(1);
+
 module.exports = PassportController;
