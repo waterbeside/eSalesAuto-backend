@@ -3,6 +3,7 @@
 // const Controller = require('egg').Controller;
 const BaseController = require('../Base');
 const moment = require('moment');
+const axios = require('axios');
 const _ = require('lodash');
 
 class SppoController extends BaseController {
@@ -39,6 +40,10 @@ class SppoController extends BaseController {
     // 取得尺码数据列表
     const sizeList = await ctx.model.MasterCollarCuffSize.findAllByCcd(customer_code);
 
+    // 取得ShipMode数据
+    const shipModeData = await ctx.model.MasterShipMode.getShipModeByCC(customer_code);
+
+
     // 取得与客户码相关的数据
     // const customerData = await ctx.model.MasterCollarCuffSize.findAllByCcd(customer_code);
 
@@ -68,12 +73,28 @@ class SppoController extends BaseController {
 
     // 开始制作sppo Json
     const sppoJson_sn_kv = {};
+    const res = {};
     for (const style_no in style_no_kv_list) {
       const dataList = style_no_kv_list[style_no];
-      sppoJson_sn_kv[style_no] = await ctx.service.sppoJson.createDataJson(dataList, { formData, userData, sizeList });
+      sppoJson_sn_kv[style_no] = await ctx.service.sppoJson.createDataJson(dataList, { formData, userData, sizeList, shipModeData });
+      // console.log(sppoJson_sn_kv[style_no]);
+      let itemRes = false;
+      try {
+        itemRes = await ctx.http.post('https://escm-ppo-az-fn-app-uat.azurewebsites.net/api/generateKnitSPPO',sppoJson_sn_kv[style_no]);
+        console.log('itemRes');
+        console.log(itemRes);
+      } catch (err) {
+        console.log('err');
+        itemRes = err.response.data;
+      }
+      res[style_no] = itemRes;
     }
+    console.log(res);
+
+    return ctx.jsonReturn(992, { sppoJson_sn_kv, res });
+
+
     // console.log(sppoJson_sn_kv);
-    return ctx.jsonReturn(992, sppoJson_sn_kv);
 
   }
 
