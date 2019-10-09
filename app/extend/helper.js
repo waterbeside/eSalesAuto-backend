@@ -6,7 +6,7 @@ module.exports = {
 
   /**
    * 转换字典key的大小写
-   * @param {Object} jsonObj
+   * @param {Object} jsonObj 被转换的以像
    * @param {Integer} type 当为0时转小写，1时转大写
    */
   changeCaseJsonKey(jsonObj, type = 0) {
@@ -44,14 +44,28 @@ module.exports = {
    * @param {String} str      原字符全
    * @param {Integer} start   起始位
    * @param {Number} stop     结束位
-   * @param {String} replacer
+   * @param {String} replacer 新字符串
    */
   replaceStr(str, start, stop, replacer) {
     if (str.substring(start, stop) === replacer) {
       return str;
     }
     return str.substring(0, start) + replacer + str.substring(stop, str.length);
+  },
 
+  /**
+   * 给有可能为undefined的变量设置默认值
+   * @param {*} field 要设置默认值的变量|字段
+   * @param {*} def 当data为undefined或为false时，返回的默认值
+   * @param {*} data 当data设有值时，field则作为data对像的key
+   */
+  setDefault(field, def = '', data = false) {
+    if (data !== false) {
+      return data && field && typeof data[field] !== 'undefined' && data[field] ? data[field] : def;
+
+    }
+    // return typeof field !== 'undefined' && field ? field : def;
+    return def;
   },
 
   /**
@@ -97,7 +111,6 @@ module.exports = {
 
     return;
   },
-
 
   /**
    * 缓存
