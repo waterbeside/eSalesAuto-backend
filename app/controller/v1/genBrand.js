@@ -26,9 +26,6 @@ class GenBrandController extends BaseController {
     const brand_code = ctx.request.query.brand_code;
 
     const res = await ctx.service.genBrandLabel.findAllByCcdAndBcd(customer_code, brand_code, 120);
-
-    console.log('res');
-    console.log(res);
     if (res.length === 0) {
       return ctx.jsonReturn(20002, { list: [] }, 'No data');
     }

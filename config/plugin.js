@@ -31,7 +31,7 @@ exports.mssql = {
 };
 
 exports.oracle = {
-  enable: false,
+  enable: true,
   package: 'egg-oracle',
 };
 

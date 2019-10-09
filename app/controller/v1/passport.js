@@ -22,7 +22,6 @@ class PassportController extends BaseController {
       full_name: userData.FullName,
       last_login_time: moment(userData.last_login_time).valueOf(),
     };
-    console.log(returnData);
 
     return ctx.jsonReturn(0, returnData, 'Successful');
 

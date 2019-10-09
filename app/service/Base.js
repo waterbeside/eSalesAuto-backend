@@ -3,9 +3,19 @@
 const Service = require('egg').Service;
 class BaseService extends Service {
 
-  errorCode = 0;
-  errorMsg = '';
-  data = null;
+  setError(errorCode, errorMsg = '', data = null) {
+    this.errorCode = errorCode;
+    this.errorMsg = errorMsg;
+    this.data = data;
+  }
+
+  getError() {
+    const errorCode = this.errorCode || 0;
+    const errorMsg = this.errorMsg || '';
+    const data = this.data || null;
+    return { errorCode, errorMsg, data };
+  }
+
 
   formatOracleRes(res) {
     const metaData = res.metaData;
@@ -27,7 +37,6 @@ class BaseService extends Service {
 
 
   async query(model, sql, isFind = 0) {
-
     try {
       if ([ 'model', 'model2' ].includes(model)) {
         const res = await this.ctx[model].query(sql);
