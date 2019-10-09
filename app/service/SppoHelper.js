@@ -287,9 +287,9 @@ class SppoHelperService extends Service {
       const garment_part = row.garment_part;
       const customer_fab_code = row.customer_fab_code;
       const otherdRowIndex = list.findIndex((item, index) => {
-        console.log('i:index=' + i + ':' + index);
-        console.log('garment_part=' + garment_part + ':' + item.garment_part);
-        console.log('customer_fab_code=' + customer_fab_code + ':' + item.customer_fab_code);
+        // console.log('i:index=' + i + ':' + index);
+        // console.log('garment_part=' + garment_part + ':' + item.garment_part);
+        // console.log('customer_fab_code=' + customer_fab_code + ':' + item.customer_fab_code);
         return (_.trim(item.garment_part) === _.trim(garment_part) && _.trim(item.customer_fab_code) !== customer_fab_code && i !== index);
       });
       if (otherdRowIndex !== -1) {
@@ -305,6 +305,7 @@ class SppoHelperService extends Service {
 
 
   async findMstFabAndCcByCfcAndGP(customer_fab_code, garment_part) {
+    const helper = this.ctx.helper;
     const returnData = {
       masterFabData: {
         ID: 0,
@@ -323,6 +324,7 @@ class SppoHelperService extends Service {
         Yarn_Type: '',
         Fab_Desc: '',
         Fab_Remark: '',
+        Yarn_Type_Code: '',
       },
       masterCollarCuffData: {
         ID: 0,
@@ -338,6 +340,7 @@ class SppoHelperService extends Service {
         Yarn_Type: '',
         CC_Desc: '',
         CC_Remark: '',
+        Yarn_Type_Code: '',
       },
     };
     if ([ 'O', 'C' ].includes(garment_part)) {
@@ -349,6 +352,35 @@ class SppoHelperService extends Service {
       returnData.masterFabData = masterFabData;
       returnData.mergData = Object.assign({}, returnData.masterCollarCuffData, masterFabData);
     }
+    const mergData = returnData.mergData;
+    const yarnTypeArray = String(mergData.Yarn_Type).split(',');
+    const yarnTypeCdArray = String(mergData.Yarn_Type_Code).split(',');
+    const yarnCountArray = String(mergData.Yarn_Count).split(',');
+    mergData.Yarn_Ratio = String(mergData.Yarn_Ratio).replace(/\//g, ',');
+    const yarnRatioArray = String(mergData.Yarn_Ratio).split(',');
+    const yarnStrandsArray = String(mergData.Yarn_Strands).split(',');
+    console.log(mergData.Yarn_Type_Code);
+    console.log(yarnTypeCdArray);
+    const yarnList = [];
+    for (const yarnTypeIndex in yarnTypeArray) {
+      const Yarn_Type = yarnTypeArray[yarnTypeIndex];
+      const Yarn_Count = helper.setDefault(yarnTypeIndex, '', yarnCountArray);
+      const Yarn_Ratio = helper.setDefault(yarnTypeIndex, '', yarnRatioArray);
+      const Yarn_Strands = helper.setDefault(yarnTypeIndex, '', yarnStrandsArray);
+      const Yarn_Type_Code = helper.setDefault(yarnTypeIndex, '', yarnTypeCdArray);
+      const yarnItemData = {
+        Yarn_Type,
+        Yarn_Count,
+        Yarn_Ratio,
+        Yarn_Strands,
+        Yarn_Type_Code,
+      };
+      console.log(yarnItemData);
+      yarnList.push(yarnItemData);
+    }
+    returnData.mergData.yarnList = yarnList;
+
+
     return returnData;
   }
 

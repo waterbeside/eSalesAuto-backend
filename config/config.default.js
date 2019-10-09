@@ -24,40 +24,36 @@ module.exports = appInfo => {
       port: 7002,
       hostname: '127.0.0.1',
       // path: '/var/run/egg.sock',
-    }
-  }
-
-
+    },
+  };
 
   config.jwt = {
     secret: secret.jwt.secret,
   };
 
-  
-
 
   config.security = {
     csrf: {
-        enable: false,
-        ignoreJSON: true, // 默认为 false，当设置为 true 时，将会放过所有 content-type 为 `application/json` 的请求
+      enable: false,
+      ignoreJSON: true, // 默认为 false，当设置为 true 时，将会放过所有 content-type 为 `application/json` 的请求
     },
-    domainWhiteList: ['http://localhost:3001']
+    domainWhiteList: [ 'http://localhost:3001' ],
   };
 
   config.cors = {
-    origin:'*',
-    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH'
+    origin: '*',
+    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
   };
 
 
   // add your user config here
   const userConfig = {
     // myAppName: 'egg',
-    sequelize:db_setting.sequelize,
-    mssql:db_setting.mssql,
-    oracle:db_setting.oracle,
-    redis:db_setting.redis,
-    
+    sequelize: db_setting.sequelize,
+    mssql: db_setting.mssql,
+    oracle: db_setting.oracle,
+    redis: db_setting.redis,
+
   };
 
 

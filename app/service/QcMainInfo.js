@@ -15,6 +15,9 @@ class QcMainInfoService extends BaseService {
     }
     const sql = "select * from escmowner.QCMAININFO where QC_REF_PPO = '" + QC_REF_PPO + "'";
     const res = await this.query('model2', sql, 1);
+    if (typeof (exp) === 'number' && exp > -1) {
+      await this.ctx.helper.cache(cacheKey, res, exp);
+    }
     return res;
   }
 }

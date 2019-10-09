@@ -16,22 +16,18 @@ class UserService extends BaseService {
    * @param {String} password  1次md5后的密码
    */
   async checkLoginByPassword(username, password) {
-
     const userData = await this.ctx.model.User.findByUsername(username);
     if (!userData) {
-      this.errorCode = 10002;
-      this.errorMsg = '查不到用户名';
+      this.setError(10002, '查不到用户名');
       return false;
     }
     if (userData.status < 1) {
-      this.errorCode = 10003;
-      this.errorMsg = '用户名已被禁用';
+      this.setError(10003, '用户名已被禁用');
       return false;
     }
     const hash_pw = this.hashPassword(password, userData.salt);
     if (hash_pw !== userData.password) {
-      this.errorCode = 10001;
-      this.errorMsg = '用户名或密码错误';
+      this.setError(10001, '用户名或密码错误');
       return false;
     }
 
@@ -56,24 +52,21 @@ class UserService extends BaseService {
     if (isCheckMaster) {
       const userData_1 = await this.ctx.model.User.findByUsername(username);
       if (userData_1) {
-        this.errorCode = 10006;
-        this.errorMsg = '用户已经存在';
+        this.setError(10006, '用户已经存在');
         return false;
       }
     }
     // 检查db2该用户是否存在
     const userData = await this.ctx.service.genUsers.getDataByUsername(username, true);
     if (!userData) {
-      this.errorCode = 10002;
-      this.errorMsg = '用户不存在';
+      this.setError(10002, '用户不存在');
       return false;
     }
     // 制作密码
     const pass_o = typeof userData.DEPARTMENT_ID === 'string' ? userData.DEPARTMENT_ID.toLowerCase() + '12345678' : '12345678';
     const pass_md5 = this.ctx.helper.md5(pass_o);
     if (password !== pass_md5) {
-      this.errorCode = 10001;
-      this.errorMsg = '用户名或密码错误';
+      this.setError(10001, '用户名或密码错误');
       return false;
     }
     const createPassRes = this.createPassword(password, 0);
@@ -96,8 +89,7 @@ class UserService extends BaseService {
       inData.id = res.id;
       return inData;
     }
-    this.errorCode = -1;
-    this.errorMsg = '添加用户失败';
+    this.setError(-1, '添加用户失败');
     return false;
 
 

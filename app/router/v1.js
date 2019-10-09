@@ -16,7 +16,7 @@ module.exports = app => {
   // 用户通行证模块
   router.post('/api/v1/passport/login', controller.v1.passport.login);
   router.get('/api/v1/passport', permission(), controller.v1.passport.index);
-  router.delete('/api/v1/passport', permission(), controller.v1.passport.logout);
+  router.delete('/api/v1/passport', controller.v1.passport.logout);
   router.get('/api/v1/passport/customer_code', permission(), controller.v1.passport.customer_code);
   router.patch('/api/v1/passport/change_pass', permission(), controller.v1.passport.change_pass);
 
