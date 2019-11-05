@@ -8,7 +8,7 @@ class FabYarnTypeService extends BaseService {
     if (!YARN_TYPE_DESC) {
       return false;
     }
-    const cacheKey = 'm2:FAB_TARN_TYPE:DESC_' + YARN_TYPE_DESC;
+    const cacheKey = 'escm:FAB_TARN_TYPE:DESC_' + YARN_TYPE_DESC;
     if (typeof (exp) === 'number' && exp > -1) {
       const cacheData = await this.ctx.helper.cache(cacheKey);
       if (cacheData) {
