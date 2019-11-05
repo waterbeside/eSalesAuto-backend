@@ -3,10 +3,10 @@
 const BaseService = require('./Base');
 class MasterSizeService extends BaseService {
 
-  async getSizesByCustomerCode(Customer_Code) {
-    const { ctx, app } = this;
+  async getSizesByCustomerCode(Customer_Code, exp = 60) {
+    const { ctx } = this;
     const cacheKey = 'master:size:array:CC_' + Customer_Code;
-    const cacheData = await ctx.helper.getStoreData(cacheKey);
+    const cacheData = await ctx.helper.cache(cacheKey);
     if (cacheData) {
       return cacheData;
     }
@@ -18,7 +18,9 @@ class MasterSizeService extends BaseService {
     res.forEach(item => {
       data.push(item.Size);
     });
-    await ctx.helper.setStoreData(cacheKey, data, 60 * 10);
+    if (typeof (exp) === 'number' && exp > -1) {
+      await ctx.helper.cache(cacheKey, data, exp);
+    }
     return data;
   }
 }

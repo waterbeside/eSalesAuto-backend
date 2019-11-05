@@ -27,7 +27,7 @@ class GenUsersService extends BaseService {
    * @param {Boolean|Integer} exp 缓存时间,秒为单位，当为false时，不缓存
    */
   async getDataByUsername(username, getActive = false, field = '*', exp = false) {
-    let cacheKey = 'm2:genUsers:un:' + username;
+    let cacheKey = 'escm:GEN_USERS:un:' + username;
     if (getActive && field !== '*') {
       cacheKey += '_' + this.ctx.helper.md5(field + (getActive ? '1' : '0'));
     }
@@ -41,8 +41,9 @@ class GenUsersService extends BaseService {
     if (getActive) {
       where += " AND ACTIVE = 'Y'";
     }
-    const sql = 'SELECT ' + field + ' FROM escmowner.GEN_USERS WHERE ' + where + ' ORDER BY USER_ID OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY';
-    const res = await this.query('model2', sql, 1);
+    // const sql = 'SELECT ' + field + ' FROM ESCMOWNER.GEN_USERS WHERE ' + where + ' ORDER BY USER_ID OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY';
+    const sql = `SELECT ${field} FROM ESCMOWNER.GEN_USERS WHERE ${where} ORDER BY USER_ID`;
+    const res = await this.query('oracle', sql, 1);
     if (typeof (exp) === 'number' && exp > -1) {
       await this.ctx.helper.cache(cacheKey, res, exp);
     }
