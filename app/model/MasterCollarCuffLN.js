@@ -2,9 +2,10 @@
 /**
  * Master_Collar_Cuff_LN (领袖具体信息)
  */
+const moment = require('moment');
 const helper = require('../extend/helper');
 module.exports = app => {
-  const { STRING, INTEGER } = app.Sequelize;
+  const { STRING, INTEGER, DATE } = app.Sequelize;
 
   const MasterCollarCuffLN = app.model.define('Master_Collar_Cuff_LN',
     {
@@ -26,6 +27,18 @@ module.exports = app => {
       Yarn_Type: STRING(100),
       CC_Desc: STRING(1000),
       CC_Remark: STRING(100),
+      Create_Time: {
+        type: DATE,
+        get() {
+          return moment(moment(this.getDataValue('Create_Time')).utc().format('YYYY-MM-DD HH:mm:ss'));
+        },
+      },
+      Update_Time: {
+        type: DATE,
+        get() {
+          return moment(moment(this.getDataValue('Update_Time')).utc().format('YYYY-MM-DD HH:mm:ss'));
+        },
+      },
     },
     { freezeTableName: true,
       timestamps: false,
