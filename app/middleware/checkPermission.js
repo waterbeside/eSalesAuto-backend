@@ -1,6 +1,5 @@
 'use strict';
 
-const jwt = require('jsonwebtoken'); // 引入jsonwebtoken
 const _ = require('lodash');
 
 module.exports = options => {

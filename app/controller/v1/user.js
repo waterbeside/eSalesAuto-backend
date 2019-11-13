@@ -17,7 +17,7 @@ class UserController extends BaseController {
     const role = ctx.request.query.role;
     const date_start = ctx.request.query.date_start ? parseInt(ctx.request.query.date_start) : 0;
     const date_end = ctx.request.query.date_end ? parseInt(ctx.request.query.date_end) : 0;
-    const userData = await this.getUserData();
+    // const userData = await this.getUserData();
     // const username = userData.username;
 
     const pagesize = ctx.request.query.pagesize ? ctx.request.query.pagesize : 20;
@@ -116,7 +116,7 @@ class UserController extends BaseController {
    * 明细
    */
   async show() {
-    const { ctx, app } = this;
+    const { ctx } = this;
     const id = parseInt(ctx.params.id);
     if (id < 1) {
       return ctx.jsonReturn(992, {}, 'Lost ID');
@@ -137,7 +137,7 @@ class UserController extends BaseController {
    * 新增用户
    */
   async create() {
-    const { ctx, app } = this;
+    const { ctx } = this;
 
     const data = ctx.request.body;
     let username = data.username;
@@ -252,7 +252,6 @@ class UserController extends BaseController {
   async update() {
     const {
       ctx,
-      app,
     } = this;
     const id = parseInt(ctx.params.id);
     const data = ctx.request.body;
@@ -333,7 +332,6 @@ class UserController extends BaseController {
   async destroy() {
     const {
       ctx,
-      app,
     } = this;
 
     const ids = ctx.request.query.id ? ctx.request.query.id : ctx.request.body.id;
@@ -341,8 +339,8 @@ class UserController extends BaseController {
     if (!ids) {
       return ctx.jsonReturn(-1, '请选择要删除的数据');
     }
-    const userData = await this.getUserData();
-    const username = userData.username;
+    // const userData = await this.getUserData();
+    // const username = userData.username;
 
     const idsArray = ids.toString().split(',');
     if (idsArray.includes('1')) {
@@ -377,7 +375,6 @@ class UserController extends BaseController {
   async checkUnique() {
     const {
       ctx,
-      app,
     } = this;
     const id = ctx.request.query.id || ctx.request.body.id || 0;
     const username = ctx.request.query.username || ctx.request.body.username;
