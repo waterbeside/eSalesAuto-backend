@@ -29,6 +29,21 @@ module.exports = {
     return crypto.createHash('md5').update(str).digest('hex');
   },
 
+
+  json_decode(str) {
+    let data = false;
+    try {
+      data = JSON.parse(str);
+    } catch (error) {
+      console.log(error.message);
+    }
+    return data;
+  },
+
+  json_encode(obj) {
+    return JSON.stringify(obj);
+  },
+
   /**
    * 数字位数补全
    *
