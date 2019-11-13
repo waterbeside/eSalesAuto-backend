@@ -2,8 +2,9 @@
 
 const moment = require('moment');
 const _ = require('lodash');
-const Service = require('egg').Service;
-class SppoHelperService extends Service {
+const BaseService = require('./Base');
+// const Service = require('egg').Service;
+class SppoHelperService extends BaseService {
 
   // 取得Unit数据
   async getUnitByGP(garment_part) {
@@ -324,7 +325,6 @@ class SppoHelperService extends Service {
         Yarn_Type: '',
         Fab_Desc: '',
         Fab_Remark: '',
-        Yarn_Type_Code: '',
       },
       masterCollarCuffData: {
         ID: 0,
@@ -340,7 +340,6 @@ class SppoHelperService extends Service {
         Yarn_Type: '',
         CC_Desc: '',
         CC_Remark: '',
-        Yarn_Type_Code: '',
       },
     };
     if ([ 'O', 'C' ].includes(garment_part)) {
@@ -354,34 +353,57 @@ class SppoHelperService extends Service {
     }
     const mergData = returnData.mergData;
     const yarnTypeArray = String(mergData.Yarn_Type).split(',');
-    const yarnTypeCdArray = String(mergData.Yarn_Type_Code).split(',');
     const yarnCountArray = String(mergData.Yarn_Count).split(',');
     mergData.Yarn_Ratio = String(mergData.Yarn_Ratio).replace(/\//g, ',');
     const yarnRatioArray = String(mergData.Yarn_Ratio).split(',');
     const yarnStrandsArray = String(mergData.Yarn_Strands).split(',');
-    console.log(mergData.Yarn_Type_Code);
-    console.log(yarnTypeCdArray);
+
     const yarnList = [];
     for (const yarnTypeIndex in yarnTypeArray) {
-      const Yarn_Type = yarnTypeArray[yarnTypeIndex];
+      const Yarn_Type_desc = yarnTypeArray[yarnTypeIndex];
       const Yarn_Count = helper.setDefault(yarnTypeIndex, '', yarnCountArray);
       const Yarn_Ratio = helper.setDefault(yarnTypeIndex, '', yarnRatioArray);
       const Yarn_Strands = helper.setDefault(yarnTypeIndex, '', yarnStrandsArray);
-      const Yarn_Type_Code = helper.setDefault(yarnTypeIndex, '', yarnTypeCdArray);
+      const yarnTypeData = await this.ctx.service.pbKnitYarnType.findByDesc(Yarn_Type_desc);
+      const Yarn_Type_Code = yarnTypeData && yarnTypeData.YARN_TYPE ? yarnTypeData.YARN_TYPE : '';
       const yarnItemData = {
-        Yarn_Type,
+        yarnTypeData,
+        Yarn_Type_desc,
         Yarn_Count,
         Yarn_Ratio,
         Yarn_Strands,
         Yarn_Type_Code,
       };
-      console.log(yarnItemData);
+      // console.log(yarnItemData);
       yarnList.push(yarnItemData);
     }
     returnData.mergData.yarnList = yarnList;
 
 
     return returnData;
+  }
+
+  /**
+   * 从过往的PPO_ITEM，通过PPO_NO、FABRIC_TYPE_CD，查出QUALITY_CODE
+   *
+   * @param {string} PPO_NO PPO_NO
+   * @param {string} FABRIC_TYPE_CD FABRIC_TYPE_CD
+   * @param {number} exp 缓存时间
+   */
+  async getQualityCodeByPpoFcd(PPO_NO, FABRIC_TYPE_CD, exp) {
+    const cacheKey = 'escm:PPO_ITEM:PPO_' + PPO_NO + '_FTC_' + FABRIC_TYPE_CD;
+    const cacheData = await this.ctx.helper.cache(cacheKey);
+    if (cacheData) {
+      return cacheData;
+    }
+    let sql = 'select * from ESCMOWNER.PPO_ITEM ';
+    sql += " where PPO_NO = '" + PPO_NO + "' and FABRIC_TYPE_CD = '" + FABRIC_TYPE_CD + "'";
+    const res = await this.query('oracle', sql, 1);
+
+    if (res && res.QUALITY_CODE && typeof (exp) === 'number' && exp > -1) {
+      await this.ctx.helper.cache(cacheKey, res, exp);
+    }
+    return res ? res.QUALITY_CODE : null;
   }
 
 }
