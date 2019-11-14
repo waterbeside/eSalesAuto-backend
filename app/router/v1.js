@@ -62,6 +62,12 @@ module.exports = app => {
   router.get('/api/v1/fab_fabric_type/check_exist', permission([ 'master', 'general' ]), controller.v1.fabFabricType.checkExist);
 
   // master_fabrication_ln
+  router.get('/api/v1/master_fabrication_ln', permission([ 'master', 'general' ]), controller.v1.masterFabricationLN.index);
+  router.get('/api/v1/master_fabrication_ln/:id', permission([ 'master', 'general' ]), controller.v1.masterFabricationLN.show);
+  router.post('/api/v1/master_fabrication_ln', permission([ 'master' ]), controller.v1.masterFabricationLN.create);
+  router.patch('/api/v1/master_fabrication_ln/:id', permission([ 'master' ]), controller.v1.masterFabricationLN.update);
+  router.delete('/api/v1/master_fabrication_ln', permission([ 'master' ]), controller.v1.masterFabricationLN.destroy); // 删除
+
   router.get('/api/v1/master_fabrication_ln/get_customer_fab_codes', permission([ 'master', 'general' ]), controller.v1.masterFabricationLN.getCustomerFabCodes);
   router.get('/api/v1/master_fabrication_ln/check_exist', permission([ 'master', 'general' ]), controller.v1.masterFabricationLN.checkExist);
 
