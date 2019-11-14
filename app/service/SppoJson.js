@@ -259,12 +259,12 @@ class SppoJsonService extends BaseService {
       const colorArrayData = {};
       for (const colorIndex in colorArray) {
         const colorItem = colorArray[colorIndex];
-        const colorComboData = await this.ctx.model.MasterColorCombo.findByCustomerAndColor(formData.customer_code, colorItem);
-        if (!colorComboData) {
-          this.setError(992, `通过${colorItem}查找基础数据失败，请到Master Center对应的基础数据`, { i: index });
-          hasError = true;
-          break;
-        }
+        // const colorComboData = await this.ctx.model.MasterColorCombo.findByCustomerAndColor(formData.customer_code, colorItem);
+        // if (!colorComboData) {
+        //   this.setError(992, `通过${colorItem}查找基础数据失败，请到Master Center对应的基础数据`, { i: index });
+        //   hasError = true;
+        //   break;
+        // }
         const fabComboData = await this.ctx.service.fabCombo.findByQualityCode(QUALITY_CODE, colorItem);
         if (!fabComboData) {
           this.setError(992, `通过"${colorItem}"和QUALITY_CODE:"${QUALITY_CODE}"查找颜色数据失败`, { i: index });
