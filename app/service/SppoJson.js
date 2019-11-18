@@ -17,6 +17,7 @@ class SppoJsonService extends BaseService {
       return false;
     }
     let hasError = false;
+    let errorRowData = {};
     const {
       formData,
       userData,
@@ -29,11 +30,7 @@ class SppoJsonService extends BaseService {
     data.forEach(item => {
       REMARKS += REMARKS.trim() === '' ? REMARKS + ' ### ' + item.remark : item.remark;
     });
-    const season = data[0].season;
-    const seasonData = await this.getSeasonData(season);
-    if (!seasonData) {
-      return false;
-    }
+
     const WASH_TYPE_DESC = data[0].garment_wash;
     const washData = await this.ctx.service.genWashType.findByDesc(WASH_TYPE_DESC);
     if (!washData) {
@@ -44,8 +41,16 @@ class SppoJsonService extends BaseService {
     const today = moment().format('YYYY-MM-DD HH:mm:ss');
     const CCY_CD = 'USD';
     const CUSTOMER_STYLE_NO = data[0].style_no;
-    const STYLE_NO = formData.brand + '-' + data[0].style_no;
+    const STYLE_NO = formData.brand + '-' + CUSTOMER_STYLE_NO;
     const CUSTOMER_CD = String(formData.customer_code);
+    const season = data[0].season;
+    const seasonData = await this.getSeasonData(season);
+    if (!seasonData) {
+      errorRowData = { style_no: CUSTOMER_STYLE_NO };
+      this.setError(992, `season解析失败, style_no = ${CUSTOMER_STYLE_NO}`, errorRowData);
+      hasError = true;
+      return false;
+    }
     // 先处理头字段
     const PPO_HD = {
       PPO_NO: '',
@@ -141,6 +146,10 @@ class SppoJsonService extends BaseService {
       CUST_LABEL_DESC: formData.brand_lable_cd,
     };
 
+    const garment_part_kv_list = _.groupBy(data, 'garment_part');
+    // console.log(garment_part_kv_list);
+
+
     // 创建PPO_ITEM 等相关
     const PPO_ITEM = [];
     const PPO_ITEM_COMBO = [];
@@ -176,15 +185,20 @@ class SppoJsonService extends BaseService {
       WASH_CATEGORY: washData.WASH_CATEGORY,
     };
 
-    for (const index in data) {
+    for (const garment_part in garment_part_kv_list) {
       if (hasError) {
         break;
       }
-      const item = data[index];
+      const itemList = garment_part_kv_list[garment_part];
+      const item = itemList[0];
       const FABRIC_TYPE_CD = item.garment_part;
+      const COMPONENT_PART = this.formatGarmentComponent(item.garment_component);
+      console.log(COMPONENT_PART);
       const getMasterLnRes = await this.ctx.service.sppoHelper.findMstFabAndCcByCfcAndGP(item.customer_fab_code, item.garment_part);
+      errorRowData = { style_no: CUSTOMER_STYLE_NO, garment_part, customer_fab_code: item.customer_fab_code };
+
       if (!getMasterLnRes) {
-        this.setError(992, `通过Customer_Fab_Code:${item.customer_fab_code}查找基础信息失败，请上传正确的 Customer_Fab_Code，或在Master Center添加对应的基础数据`, { i: index });
+        this.setError(992, `通过Customer_Fab_Code:${item.customer_fab_code}查找基础信息失败，请上传正确的 Customer_Fab_Code，或在Master Center添加对应的基础数据`, errorRowData);
         hasError = true;
         break;
       }
@@ -193,31 +207,24 @@ class SppoJsonService extends BaseService {
       const REF_PPO_NO = masterLnData.Refer_PPO_Usage.substring(0, masterLnData.Refer_PPO_Usage.length - 2);
       const REF_PPO_GP = masterLnData.Refer_PPO_Usage.substring(masterLnData.Refer_PPO_Usage.length - 1, masterLnData.Refer_PPO_Usage.length);
 
-      // const QUALITY_CODE = 'C1704479'; // TEMP: 临时写死
-      const QUALITY_CODE = await this.ctx.service.sppoHelper.getQualityCodeByPpoFcd(REF_PPO_NO, REF_PPO_GP); //查找 QUALITY_CODE;
+      const QUALITY_CODE = await this.ctx.service.sppoHelper.getQualityCodeByPpoFcd(REF_PPO_NO, REF_PPO_GP); // 查找 QUALITY_CODE;
       if (!QUALITY_CODE) {
-        this.setError(992, `通过Customer_Fab_Code:${item.customer_fab_code}查找QUALITY_CODE失败，请上传正确的 Customer_Fab_Code`, { i: index });
+        this.setError(992, `通过Customer_Fab_Code:${item.customer_fab_code}查找QUALITY_CODE失败，请上传正确的 Customer_Fab_Code`, errorRowData);
         hasError = true;
         break;
       }
       const qcMainInfo = await this.ctx.service.qcMainInfo.findByQc(QUALITY_CODE);
-      console.log('qcMainInfo');
-      console.log(qcMainInfo);
-
       const qcFinishDtl = await this.ctx.service.qcFinishDtl.findByQc(QUALITY_CODE);
-
       // const pbKintConstructionData = await this.ctx.service.pbKnitConstruction.findByDesc(masterLnData.Fab_Desc);
       const constructionData = await this.ctx.service.qcConstructionDtl.findByQc(QUALITY_CODE);
 
-      console.log('qcFinishDtl');
-      console.log(qcFinishDtl);
-
-      const qtyData = await this.ctx.model.MasterQtyLD.findByGP(item.garment_part);
+      // const qtyData = await this.ctx.model.MasterQtyLD.findByGP(item.garment_part);
       const UOM_CD = await this.ctx.model.MasterUnit.getUnitByGP(item.garment_part);
 
-      const sizeArray = item.size.split('/');
-      const garmentQtyArray = String(item.garment_qty).split('/');
-      const colorArray = item.color_name.split('/');
+      // const sizeArray = item.size.split('/');
+      // const garmentQtyArray = String(item.garment_qty).split('/');
+      // const colorArray = item.color_name.split('/');
+      // const colorCodeArray = item.color_code.split('/');
       const finishingArray = masterLnData.Finishing.split(',');
 
       // console.log(qcMainInfo);continue;
@@ -234,7 +241,7 @@ class SppoJsonService extends BaseService {
         DESCRIPTION: helper.setDefault('Fab_Desc', '', masterLnData),
         REMARKS: helper.setDefault('Fab_Remark', '', masterLnData),
         STATUS: 'N', // XXX: ???
-        COMPONENT_PART: item.garment_component,
+        COMPONENT_PART,
         PRINT_FLAG: item.print,
         EMBROIDERY_FLAG: 'N', // XXX: ???
         CREATE_DATE: moment().format('YYYY-MM-DD HH:mm:ss'),
@@ -253,296 +260,199 @@ class SppoJsonService extends BaseService {
       };
       PPO_ITEM.push(itemData);
 
+      // 预设 ITEM_LOT_HD_ID;
+      const ITEM_LOT_HD_ID = PPO_ITEM_LOT_HD.length + 1;
+      let TOTAL_ORDER_QTY = 0;
+
       if (hasError) {
         break;
       }
+
+      const itemCombo_hasPush = [];
+      const itemSizeData_hasPush = [];
       const colorArrayData = {};
-      for (const colorIndex in colorArray) {
-        const colorItem = colorArray[colorIndex];
-        // const colorComboData = await this.ctx.model.MasterColorCombo.findByCustomerAndColor(formData.customer_code, colorItem);
-        // if (!colorComboData) {
-        //   this.setError(992, `通过${colorItem}查找基础数据失败，请到Master Center对应的基础数据`, { i: index });
-        //   hasError = true;
-        //   break;
-        // }
-        const fabComboData = await this.ctx.service.fabCombo.findByQualityCode(QUALITY_CODE, colorItem);
-        if (!fabComboData) {
-          this.setError(992, `通过"${colorItem}"和QUALITY_CODE:"${QUALITY_CODE}"查找颜色数据失败`, { i: index });
-          hasError = true;
-          break;
-        }
-
-        console.log('fabComboData');
-        console.log(fabComboData);
+      for (const i in itemList) {
+        const itemListData = itemList[i];
+        errorRowData.i = i;
         /** PPO_ITEM_COMBO */
-        const ITEM_COMBO_ID = PPO_ITEM_COMBO.length + 1;
-        const itemComboData = {
-          ITEM_COMBO_ID,
-          PPO_ITEM_ID,
-          QUALITY_CODE, // xxx: 要IT API 生成？
-          FABRIC_TYPE_CD,
-          FAB_COMBO_ID: fabComboData.FAB_COMBO_ID, // XXX: 
-          VAT_RATE: '',
-          CCY_CD,
-          UOM_CD,
-          YPD: '',
-          APAC_ORDER_FLAG: 'N', // XXX: 默认空白？
-          REMARKS: '',
-          STATUS: 'N', // XXX: 不确定
-          GMT_COLOR_CODE: item.color_code,
-          FABRIC_CODE: fabComboData.FABRIC_CODE, // XXX: ESCMOWNER.FAB_COMBO？
-          COMBO_NAME: colorItem,
-          LAYOUT: fabComboData.LAYOUT, // XXX: 从master表取？
-          CREATE_DATE: today,
-          CREATE_USER_ID: username,
-          LAST_MODI_DATE: today,
-          LAST_MODI_USER_ID: username,
-          styleIndex: 1, // XXX: ???
-          colorwayIndex: 0, // XXX: ???
-          garmentPartIndex: 0, // XXX: ???
-          newFlag: true, // XXX: ???
-        };
-        PPO_ITEM_COMBO.push(itemComboData);
+        const { color_code, color_name } = this.formatColor(itemListData.color);
+        const itemCombo_pkey = `COLOR_${itemListData.color}`;
+        if (!itemCombo_hasPush.includes(itemCombo_pkey)) {
+          const fabComboData = await this.ctx.service.fabCombo.findByQualityCode(QUALITY_CODE, color_name);
+          const ITEM_COMBO_ID = PPO_ITEM_COMBO.length + 1;
 
-        /** PPO_ITEM_COMBO_LABDIP */
-        const fabComboLabdipData = await this.service.fabComboLab.findByFabComboId(fabComboData.FAB_COMBO_ID);
-        if (!fabComboLabdipData) {
-          this.setError(992, `通过FAB_COMBO_ID:"${fabComboData.FAB_COMBO_ID}"查找FAB_COMBO_LAB数据失败`, { i: index });
-          hasError = true;
-          break;
-        }
-        const fabLabdipLibData = await this.service.fabLabdipLib.findById(fabComboLabdipData.LABDIP_ID);
-        if (!fabLabdipLibData) {
-          this.setError(992, `通过LABDIP_ID:"${fabComboLabdipData.LABDIP_ID}"查找FAB_LABDIP_LIB数据失败`, { i: index });
-          hasError = true;
-          break;
-        }
-        const COMBO_LABDIP_ID = PPO_ITEM_COMBO_LABDIP.length + 1;
-        const itemComboLabdipData = {
-          COMBO_LABDIP_ID,
-          LABDIP_ID: fabComboLabdipData.LABDIP_ID, // 从FAB_COMBO_LAB表取
-          PPO_ITEM_ID,
-          ITEM_COMBO_ID,
-          FAB_COMBO_ID: fabComboData.FAB_COMBO_ID,
-          CUSTOMER_COLOR_NAME: colorItem,
-          COLOR_STANDARD: fabComboLabdipData.COLOR_STANDARD,
-          CREATE_USER_ID: fabComboLabdipData.CREATE_USER_ID,
-          CREATE_DATE: fabComboLabdipData.CREATE_DATE,
-          LAST_MODI_USER_ID: fabComboLabdipData.LAST_MODI_USER_ID,
-          LAST_MODI_DATE: fabComboLabdipData.LAST_MODI_DATE,
-          LABDIP_LIBRARY_ID: fabComboLabdipData.LABDIP_LIBRARY_ID,
-          SEQ: fabComboLabdipData.SEQ,
-          LABDIP_REQ_NO: fabLabdipLibData.LABDIP_REQ_NO,
-          LABDIP_REQ_SEQ: fabLabdipLibData.LABDIP_REQ_SEQ,
-          CUSTOMER_CD: fabLabdipLibData.CUSTOMER_CD,
-          YEAR: seasonData.year, // XXX: ??? or null ?
-          SEASON_CD: seasonData.season.code,
-          REQ_FABRICATION: fabLabdipLibData.REQ_FABRICATION,
-          MILL_COLOR_CODE: fabLabdipLibData.MILL_COLOR_CODE,
-          LABDIP_COLOR_NAME: fabLabdipLibData.LABDIP_COLOR_NAME,
-          GROUP_NO: fabLabdipLibData.GROUP_NO,
-          LABDIP_PPO_NO: fabLabdipLibData.LABDIP_PPO_NO,
-          SHADE: fabLabdipLibData.SHADE,
-          RED: fabLabdipLibData.RED,
-          GREEN: fabLabdipLibData.GREEN,
-          BLUE: fabLabdipLibData.BLUE,
-          STATUS: fabLabdipLibData.STATUS,
-          LABDIP_APPROVAL_DATE: fabLabdipLibData.LABDIP_APPROVAL_DATE,
-          BUYER_COMMENT: fabLabdipLibData.BUYER_COMMENT,
-          REMARK: '', // helper.setDefault('Remark', '', colorComboData)''
-          styleIndex: 1, // XXX: ???
-          colorwayIndex: 0, // XXX: ???
-          garmentPartIndex: 0, // XXX: ???
-          labdipIndex: 0, // XXX: ???
-          newFlag: true, // XXX: ???
-        };
-        PPO_ITEM_COMBO_LABDIP.push(itemComboLabdipData);
-
-        /** FAB_LABDIP_LIB */
-        // const LABDIP_LIB_ID = FAB_LABDIP_LIB.length + 1;
-        // const fabLabdipLibData = {
-        //   LABDIP_LIB_ID,
-        //   LABDIP_REQ_NO: helper.setDefault('Lab_Dip_Req', '', colorComboData),
-        //   LABDIP_REQ_SEQ: 0, // XXX: ???
-        //   CUSTOMER_CD,
-        //   YEAR: seasonData.year, // XXX: ??? or null ?
-        //   SEASON_CD: seasonData.season.code,
-        //   REQ_FABRICATION: null, // XXX: ??? or null ?
-        //   CUST_COLOR_NAME: colorItem, // XXX: ???
-        //   MILL_COLOR_CODE: helper.setDefault('Mill_Color_Code', '', colorComboData),
-        //   LABDIP_COLOR_NAME: colorItem,
-        //   GROUP_NO: null, // XXX: ???
-        //   LABDIP_PPO_NO: 'N/A', // XXX: ???
-        //   SHADE: helper.setDefault('Shade', null, colorComboData),
-        //   RED: null, // XXX: ???
-        //   GREEN: null, // XXX: ???
-        //   BLUE: null, // XXX: ???
-        //   STATUS: 'A', // XXX: ???
-        //   LABDIP_APPROVAL_DATE: today, // XXX: ???
-        //   BUYER_COMMENT: null, // XXX: ???
-        //   CREATE_DATE: today,
-        //   CREATE_USER_ID: username,
-        //   LAST_MODI_DATE: today,
-        //   LAST_MODI_USER_ID: username,
-        //   KMIS_CUSTOMER_CD: 'B033', // XXX: ???
-        //   KMIS_SEASON_DESC: 'N/A', // XXX: ???
-        //   FROM_ESCM: null, // XXX: ???
-        //   FROM_KMIS: null, // XXX: ???
-        //   FROM_GES: null, // XXX: ???
-        //   GES_CUSTOMER_CD: null, // XXX: ???
-        //   FROM_MIS_ID: null, // XXX: ???,
-        //   OPERATION_SOURCE: null, // XXX: ???,
-        //   OPERATION_DATE: null, // XXX: ???,
-
-        // };
-        // FAB_LABDIP_LIB.push(fabLabdipLibData);
-
-        // 把数据放入colorArrayData以便复用
-        colorArrayData[colorItem] = {
-          // colorComboData,
-          itemComboData,
-          itemComboLabdipData,
-          fabLabdipLibData,
-          fabComboData,
-          fabComboLabdipData,
-        };
-      }
-
-      /** PPO_ITEM_SIZE */
-      if (hasError) {
-        break;
-      }
-      for (const garmentQtyIndex in garmentQtyArray) {
-        const qtyItem = garmentQtyArray[garmentQtyIndex];
-        const sizeItem = typeof sizeArray[garmentQtyIndex] !== 'undefined' ? sizeArray[garmentQtyIndex] : null;
-
-        /** PPO_ITEM_LOT_HD */
-        const ITEM_LOT_HD_ID = PPO_ITEM_LOT_HD.length + 1;
-        const itemLotHdData = {
-          ITEM_LOT_HD_ID,
-          PPO_ITEM_ID,
-          QUALITY_CODE, // TODO: 未确定数据来源 找IT出接口？
-          FABRIC_TYPE_CD,
-          LOT_NO: 1,
-          FAB_DEL_DATE: delivery, // 交期
-          SHIP_MODE_CD: shipModeData.Ship_Mode_Code, // ship_mode
-          SHIP_MODE_DESC: shipModeData.SHIP_MODE_DESC,
-          DESTINATION_CD: shipModeData.Destination,
-          SLT_FLAG: 'N',
-          STATUS: 'N',
-          UOM_CD,
-          CCY_CD,
-          TOTAL_ORDER_QTY: (qtyItem && qtyData ? qtyItem * qtyData.Qty : 0) * colorArray.length, // 各种颜色，各种size的总和。
-          ORIGINAL_ITEM_LOT_HD_ID: null,
-          DROP_ONE_FLAG: '',
-          newFlag: true,
-
-          // TOTAL_GMT_QTY: 0,
-          // FACTORY_DELIVERY_DATE: null, // XXX: ???
-          // ESTIMATED_SIZE_RATIO: null, // XXX: ???
-          // ESTIMATED_GARMENT_QTY: null, // XXX: ???
-          // GARMENT_DATE: null, // XXX: ???
-          // FE_NO: null, // XXX: ???
-          // EEM_PRICE: null, // XXX: ???
-          // FTY_PRICE: null, // XXX: ???
-          // PPO_PRICE: null, // XXX: ???
-          // PRICE_FLAG: 'N', // XXX: ???
-          // ON_HOLD: null, // XXX: ???
-          // LOT_TYPE_CD: null, // XXX: ???
-          // SAMPLE_LOT: null, // XXX: ???
-          // SAMPLE_QUANTITY: 0, // XXX: ???
-          // QUANTITY_IN_METER: 0, // XXX: ???
-          // WASH_WASTAGE: 0, // XXX: ???
-          // OTHER_WASTAGE: 0, // XXX: ???
-          // PRINT_FLAG: null, // XXX: ???
-          // QTY_PER_GARMENT: 0, // XXX: ???
-          // PLAN_PROD_COMP_DATE: null, // XXX: ???
-          // BUYER_PO_DATE: null, // XXX: ???
-          // PRICE_WITH_VAT: null, // XXX: ???
-          // VAT_RATE: null, // XXX: ???
-          // BODY_TRIM_TYPE_CD: null, // XXX: ???
-          // BOTY_TRIM_CD: null, // XXX: ???
-          // APPROVED_SLT_FLAG: null, // XXX: ???
-          // REMARKS: null, // XXX: ???
-          // CREATE_DATE: today,
-          // CREATE_USER_ID: username,
-          // LAST_MODI_DATE: today,
-          // LAST_MODI_USER_ID: username,
-          // PROPOSED_FAB_DEL_DATE: null, // XXX: ???
-          // ADDING_FLAG: null, // XXX: ???
-          // COMBINE_FROM: null, // XXX: ???
-        };
-        PPO_ITEM_LOT_HD.push(itemLotHdData);
-
-        /** PPO_ITEM_SIZE */
-        if (sizeItem) {
-          const ITEM_SIZE_ID = PPO_ITEM_SIZE.length + 1;
-          let sizeData = null;
-          const dSize = sizeItem.substring(sizeItem.length - 1, sizeItem.length); // 从excel的size中拆出尺码
-          const dSex = sizeItem.substring(0, sizeItem.length - 1); // 从excel的size中拆出性别
-          if (!dSize || !dSex) {
-            break;
-          }
-          for (const sI in sizeList) {
-            const sE = sizeList[sI];
-            if (sE.Size.toLowerCase() === dSize.toLowerCase() && sE.Sex === dSex) {
-              sizeData = sE;
-              break;
-            }
-          }
-          const L_Int = helper.setDefault('L_Int', 0, sizeData);
-          const L_Fra = helper.setDefault('L_Fra', 0, sizeData);
-          const H_Int = helper.setDefault('H_Int', 0, sizeData);
-          const H_Fra = helper.setDefault('H_Fra', 0, sizeData);
-          const size_UOM = helper.setDefault('UOM', '', sizeData);
-          const SIZE_MEASUREMENT = (L_Int + L_Fra) + size_UOM + 'X' + (H_Int + H_Fra) + size_UOM;
-          const itemSizeData = {
-            ITEM_SIZE_ID,
+          /** PPO_ITEM_COMBO */
+          const itemComboData = {
+            ITEM_COMBO_ID,
             PPO_ITEM_ID,
+            QUALITY_CODE, // xxx: 要IT API 生成？
             FABRIC_TYPE_CD,
-            QUALITY_CODE,
-            SIZE_CODE: dSize, // XXX: ???
-            SIZE_MEASUREMENT,
-            APAC_ORDER_FLAG: 'N', // XXX: ???
-            REMARKS: dSize, // XXX: ???
+            FAB_COMBO_ID: fabComboData.FAB_COMBO_ID, // XXX: 
+            VAT_RATE: '',
+            CCY_CD,
+            UOM_CD,
+            YPD: '',
+            APAC_ORDER_FLAG: 'N', // XXX: 默认空白？
+            REMARKS: '',
+            STATUS: 'N', // XXX: 不确定
+            GMT_COLOR_CODE: color_code,
+            FABRIC_CODE: fabComboData.FABRIC_CODE, // XXX: ESCMOWNER.FAB_COMBO？
+            COMBO_NAME: color_name,
+            LAYOUT: fabComboData.LAYOUT, // XXX: 从master表取？
             CREATE_DATE: today,
             CREATE_USER_ID: username,
             LAST_MODI_DATE: today,
             LAST_MODI_USER_ID: username,
-            STATUS: 'N', // XXX: ???
-            UOM_CD, // XXX: 通过Garment_Part取Unit?
-            // UNIT_PRICE: null, // XXX: ???
-            // PRICE_UPDATE_DATE: null, // XXX: ???
-            SIZE_SEQ: '',
-            SIZE_WIDTH_INT: L_Int,
-            SIZE_WIDTH_FRA: L_Fra,
-            SIZE_HEIGHT_INT: H_Int,
-            SIZE_HEIGHT_FRA: H_Fra,
-            SIZE_UM: size_UOM, // XXX: ???
             styleIndex: 1, // XXX: ???
             colorwayIndex: 0, // XXX: ???
             garmentPartIndex: 0, // XXX: ???
-            fkMmtIndex: 0, // XXX: ???
             newFlag: true, // XXX: ???
           };
-          PPO_ITEM_SIZE.push(itemSizeData);
+          PPO_ITEM_COMBO.push(itemComboData);
 
-          for (const colorItem in colorArrayData) {
+          /** PPO_ITEM_COMBO_LABDIP */
+          const fabComboLabdipData = await this.service.fabComboLab.findByFabComboId(fabComboData.FAB_COMBO_ID);
+          if (!fabComboLabdipData) {
+            this.setError(992, `通过FAB_COMBO_ID:"${fabComboData.FAB_COMBO_ID}"查找FAB_COMBO_LAB数据失败`, errorRowData);
+            hasError = true;
+            break;
+          }
+          console.log()
+
+          const fabLabdipLibData = await this.service.fabLabdipLib.findById(fabComboLabdipData.LABDIP_LIBRARY_ID);
+          if (!fabLabdipLibData) {
+            this.setError(992, `通过LABDIP_ID:"${fabComboLabdipData.LABDIP_ID}"查找FAB_LABDIP_LIB数据失败`, errorRowData);
+            hasError = true;
+            break;
+          }
+          const COMBO_LABDIP_ID = PPO_ITEM_COMBO_LABDIP.length + 1;
+          const itemComboLabdipData = {
+            COMBO_LABDIP_ID,
+            LABDIP_ID: fabComboLabdipData.LABDIP_ID, // 从FAB_COMBO_LAB表取
+            PPO_ITEM_ID,
+            ITEM_COMBO_ID,
+            FAB_COMBO_ID: fabComboData.FAB_COMBO_ID,
+            CUSTOMER_COLOR_NAME: color_name,
+            COLOR_STANDARD: fabComboLabdipData.COLOR_STANDARD,
+            CREATE_USER_ID: fabComboLabdipData.CREATE_USER_ID,
+            CREATE_DATE: fabComboLabdipData.CREATE_DATE,
+            LAST_MODI_USER_ID: fabComboLabdipData.LAST_MODI_USER_ID,
+            LAST_MODI_DATE: fabComboLabdipData.LAST_MODI_DATE,
+            LABDIP_LIBRARY_ID: fabComboLabdipData.LABDIP_LIBRARY_ID,
+            SEQ: fabComboLabdipData.SEQ,
+            LABDIP_REQ_NO: fabLabdipLibData.LABDIP_REQ_NO,
+            LABDIP_REQ_SEQ: fabLabdipLibData.LABDIP_REQ_SEQ,
+            CUSTOMER_CD: fabLabdipLibData.CUSTOMER_CD,
+            YEAR: seasonData.year, // XXX: ??? or null ?
+            SEASON_CD: seasonData.season.code,
+            REQ_FABRICATION: fabLabdipLibData.REQ_FABRICATION,
+            MILL_COLOR_CODE: fabLabdipLibData.MILL_COLOR_CODE,
+            LABDIP_COLOR_NAME: fabLabdipLibData.LABDIP_COLOR_NAME,
+            GROUP_NO: fabLabdipLibData.GROUP_NO,
+            LABDIP_PPO_NO: fabLabdipLibData.LABDIP_PPO_NO,
+            SHADE: fabLabdipLibData.SHADE,
+            RED: fabLabdipLibData.RED,
+            GREEN: fabLabdipLibData.GREEN,
+            BLUE: fabLabdipLibData.BLUE,
+            STATUS: fabLabdipLibData.STATUS,
+            LABDIP_APPROVAL_DATE: fabLabdipLibData.LABDIP_APPROVAL_DATE,
+            BUYER_COMMENT: fabLabdipLibData.BUYER_COMMENT,
+            REMARK: '', // helper.setDefault('Remark', '', colorComboData)''
+            styleIndex: 1, // XXX: ???
+            colorwayIndex: 0, // XXX: ???
+            garmentPartIndex: 0, // XXX: ???
+            labdipIndex: 0, // XXX: ???
+            newFlag: true, // XXX: ???
+          };
+          PPO_ITEM_COMBO_LABDIP.push(itemComboLabdipData);
+
+          itemCombo_hasPush.push(itemCombo_pkey);
+          // 把数据放入colorArrayData以便复用
+          colorArrayData[itemListData.color] = {
+            // colorComboData,
+            itemComboData,
+            itemComboLabdipData,
+            fabLabdipLibData,
+            fabComboData,
+            fabComboLabdipData,
+          };
+        }
+
+        /** PPO_ITEM_SIZE */
+        const itemSizeData_pKey = `SEX_${itemListData.sex}:SIZE_${itemListData.size}:COLOR_${itemListData.color}`;
+
+        if (!itemSizeData_hasPush.includes(itemSizeData_pKey)) {
+          // 计算Total qty;
+          const ORDER_QTY = parseInt(itemData.garment_qty);
+          TOTAL_ORDER_QTY += ORDER_QTY;
+
+          const ITEM_SIZE_ID = PPO_ITEM_SIZE.length + 1;
+          // const dSize = sizeItem.substring(sizeItem.length - 1, sizeItem.length); // 从excel的size中拆出尺码
+          // const dSex = sizeItem.substring(0, sizeItem.length - 1); // 从excel的size中拆出性别
+          const dSex = itemListData.sex;
+          const dSize = itemListData.size;
+          if (dSize && dSex) {
+            let sizeData = null;
+            for (const sI in sizeList) {
+              const sE = sizeList[sI];
+              if (sE.Size.toLowerCase() === dSize.toLowerCase() && sE.Sex === dSex) {
+                sizeData = sE;
+                break;
+              }
+            }
+            const L_Int = helper.setDefault('L_Int', 0, sizeData);
+            const L_Fra = helper.setDefault('L_Fra', 0, sizeData);
+            const H_Int = helper.setDefault('H_Int', 0, sizeData);
+            const H_Fra = helper.setDefault('H_Fra', 0, sizeData);
+            const size_UOM = helper.setDefault('UOM', '', sizeData);
+            const SIZE_MEASUREMENT = (L_Int + L_Fra) + size_UOM + 'X' + (H_Int + H_Fra) + size_UOM;
+            const itemSizeData = {
+              ITEM_SIZE_ID,
+              PPO_ITEM_ID,
+              FABRIC_TYPE_CD,
+              QUALITY_CODE,
+              SIZE_CODE: dSize, // XXX: ???
+              SIZE_MEASUREMENT,
+              APAC_ORDER_FLAG: 'N', // XXX: ???
+              REMARKS: dSize, // XXX: ???
+              CREATE_DATE: today,
+              CREATE_USER_ID: username,
+              LAST_MODI_DATE: today,
+              LAST_MODI_USER_ID: username,
+              STATUS: 'N', // XXX: ???
+              UOM_CD, // XXX: 通过Garment_Part取Unit?
+              // UNIT_PRICE: null, // XXX: ???
+              // PRICE_UPDATE_DATE: null, // XXX: ???
+              SIZE_SEQ: '',
+              SIZE_WIDTH_INT: L_Int,
+              SIZE_WIDTH_FRA: L_Fra,
+              SIZE_HEIGHT_INT: H_Int,
+              SIZE_HEIGHT_FRA: H_Fra,
+              SIZE_UM: size_UOM, // XXX: ???
+              styleIndex: 1, // XXX: ???
+              colorwayIndex: 0, // XXX: ???
+              garmentPartIndex: 0, // XXX: ???
+              fkMmtIndex: 0, // XXX: ???
+              newFlag: true, // XXX: ???
+            };
+            PPO_ITEM_SIZE.push(itemSizeData);
+            itemSizeData_hasPush.push(itemSizeData_pKey);
+
+            /** PPO_ITEM_LOT_DT */
             const {
               itemComboData,
-            } = colorArrayData[colorItem];
-            /** PPO_ITEM_LOT_DT */
+            } = colorArrayData[itemListData.color];
             const itemLotDtData = {
               ITEM_LOT_DT_ID: PPO_ITEM_LOT_DT.length + 1,
               ITEM_LOT_HD_ID,
               PPO_ITEM_ID,
               FABRIC_TYPE_CD,
               ITEM_COMBO_ID: itemComboData.ITEM_COMBO_ID,
-              GMT_COLOR_CODE: item.color_code,
+              GMT_COLOR_CODE: itemComboData.GMT_COLOR_CODE,
               ITEM_SIZE_ID,
-              SIZE_CODE: sizeItem,
+              SIZE_CODE: dSize,
               LOT_NO: 1,
-              ORDER_QTY: qtyItem && qtyData ? qtyItem * qtyData.Qty : 0, // XXX: ???
+              ORDER_QTY,
               STATUS: 'N',
               MIS_STATUS: '', // XXX: ???
               MIS_LOCK_FLAG: '', // XXX: ???
@@ -566,13 +476,37 @@ class SppoJsonService extends BaseService {
               // PRICE_FLAG: 'N',
               // MOQ_QTY: null,
               // IND_REQUIRE_QTY: null,
-
-
             };
             PPO_ITEM_LOT_DT.push(itemLotDtData);
           }
-        }
-      }
+          
+        } // end if size
+
+
+      } // end of itemList loop
+
+      /** PPO_ITEM_LOT_HD */
+      const itemLotHdData = {
+        ITEM_LOT_HD_ID,
+        PPO_ITEM_ID,
+        QUALITY_CODE, // TODO: 未确定数据来源 找IT出接口？
+        FABRIC_TYPE_CD,
+        LOT_NO: 1,
+        FAB_DEL_DATE: delivery, // 交期
+        SHIP_MODE_CD: shipModeData.Ship_Mode_Code, // ship_mode
+        SHIP_MODE_DESC: shipModeData.SHIP_MODE_DESC,
+        DESTINATION_CD: shipModeData.Destination,
+        SLT_FLAG: 'N',
+        STATUS: 'N',
+        UOM_CD,
+        CCY_CD,
+        TOTAL_ORDER_QTY, // 各种颜色，各种size的总和。
+        ORIGINAL_ITEM_LOT_HD_ID: null,
+        DROP_ONE_FLAG: '',
+        newFlag: true,
+      };
+      PPO_ITEM_LOT_HD.push(itemLotHdData);
+
 
       /** PPO_QCMAININFO */
       if (hasError) {
@@ -790,7 +724,6 @@ class SppoJsonService extends BaseService {
    */
   async getSeasonData(season) {
     season = season.toLowerCase();
-    const seasonSplit = season.split('q');
     const seasonCodes = {
       q1: {
         code: 'SP',
@@ -809,17 +742,50 @@ class SppoJsonService extends BaseService {
         name: 'WINTER',
       },
     };
-    const year = '20' + seasonSplit[0];
-    if (typeof seasonSplit[1] === 'undefined' || typeof seasonCodes['q' + seasonSplit[1]] === 'undefined') {
+    let year = '';
+    let season_code = '';
+    if (season.indexOf('-') > 0) {
+      const seasonSplit = season.split('-');
+      if (typeof seasonSplit[2] === 'undefined' || typeof seasonSplit[3] === 'undefined') {
+        return false;
+      }
+      year = '20' + seasonSplit[2];
+      const seasonIndex = parseInt(seasonSplit[3]);
+      season_code = seasonCodes['q' + seasonIndex];
+
+    } else if (season.indexOf('q')) {
+      const seasonSplit = season.split('q');
+      year = '20' + seasonSplit[0];
+      const seasonIndex = typeof seasonSplit[1] !== 'undefined' ? seasonSplit[1] : false;
+      if (!seasonIndex || typeof seasonCodes['q' + seasonIndex] === 'undefined') {
+        return false;
+      }
+      season_code = seasonCodes['q' + seasonIndex];
+    } else {
       return false;
     }
     return {
-      season: seasonCodes['q' + seasonSplit[1]],
+      season: season_code,
       year,
     };
   }
 
-  // async getItemAssit
+  formatGarmentComponent(str) {
+    return str.substring(1, str.length).trim();
+  }
+
+  formatColor(str) {
+    let color_code = '';
+    let color_name = '';
+    const colorSplit = str.split(' ');
+    color_code = colorSplit[0];
+    const colorNameStr = _.isString(colorSplit[1]) ? colorSplit[1] : '';
+    const colorNameSplit = colorNameStr.split('-');
+    color_name = colorNameSplit[0];
+    return {
+      color_code, color_name,
+    };
+  }
 
 }
 
