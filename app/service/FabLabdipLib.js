@@ -13,14 +13,14 @@ class FabLabdipLibService extends BaseService {
     if (!id) {
       return false;
     }
-    const cacheKey = `escm:FAB_LABDIP_LAB:ID_${id}`;
+    const cacheKey = `escm:FAB_LABDIP_LIB:ID_${id}`;
     if (typeof (exp) === 'number' && exp > -1) {
       const cacheData = await this.ctx.helper.cache(cacheKey);
       if (cacheData) {
         return cacheData;
       }
     }
-    const sql = `SELECT * FROM ESCMOWNER.FAB_LABDIP_LAB WHERE LABDIP_LIBRARY_ID = ${id}`;
+    const sql = `SELECT * FROM ESCMOWNER.FAB_LABDIP_LIB WHERE LABDIP_LIB_ID = ${id}`;
     const res = await this.query('oracle', sql, 1);
     if (typeof (exp) === 'number' && exp > -1) {
       await this.ctx.helper.cache(cacheKey, res, exp);
