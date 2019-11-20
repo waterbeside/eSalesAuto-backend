@@ -321,7 +321,7 @@ class SppoHelperService extends BaseService {
         Weight_AW: 0,
         Yarn_Count: '',
         Yarn_Strands: '',
-        Yarn_Ratio: '',
+        Yarn_Ratio: 0,
         Yarn_Type: '',
         Fab_Desc: '',
         Fab_Remark: '',
@@ -336,7 +336,7 @@ class SppoHelperService extends BaseService {
         Dye_Method: '',
         Yarn_Count: '',
         Yarn_Strands: '',
-        Yarn_Ratio: '',
+        Yarn_Ratio: 0,
         Yarn_Type: '',
         CC_Desc: '',
         CC_Remark: '',
@@ -362,15 +362,19 @@ class SppoHelperService extends BaseService {
     for (const yarnTypeIndex in yarnTypeArray) {
       const Yarn_Type_desc = yarnTypeArray[yarnTypeIndex];
       const Yarn_Count = helper.setDefault(yarnTypeIndex, '', yarnCountArray);
-      const Yarn_Ratio = helper.setDefault(yarnTypeIndex, '', yarnRatioArray);
+      const Yarn_Ratio_str = helper.setDefault(yarnTypeIndex, '', yarnRatioArray);
+      const Yarn_Ratio = this.parseYarnRatio(Yarn_Ratio_str);
       const Yarn_Strands = helper.setDefault(yarnTypeIndex, '', yarnStrandsArray);
       const yarnTypeData = await this.ctx.service.pbKnitYarnType.findByDesc(Yarn_Type_desc);
       const Yarn_Type_Code = yarnTypeData && yarnTypeData.YARN_TYPE ? yarnTypeData.YARN_TYPE : '';
+
+
       const yarnItemData = {
         yarnTypeData,
         Yarn_Type_desc,
         Yarn_Count,
         Yarn_Ratio,
+        Yarn_Ratio_str,
         Yarn_Strands,
         Yarn_Type_Code,
       };
@@ -379,8 +383,25 @@ class SppoHelperService extends BaseService {
     }
     returnData.mergData.yarnList = yarnList;
 
-
     return returnData;
+  }
+
+  /**
+   * 解析YarnRatio字段字符串到百分比小数
+   * @param {String} str YarnRatio字段字符串内容
+   */
+  parseYarnRatio(str) {
+    if (!str) {
+      return 0;
+    }
+    const strSplit = str.split('%');
+    const str2 = strSplit[0];
+    let num = str2;
+    if (str2.indexOf(':') > -1) {
+      const strSplit2 = str2.split(':');
+      num = typeof strSplit2[1] === 'undefined' ? strSplit2[0] : strSplit2[1];
+    }
+    return parseFloat(num) / 100;
   }
 
   /**
@@ -394,12 +415,10 @@ class SppoHelperService extends BaseService {
     const cacheKey = 'escm:PPO_ITEM:PPO_' + PPO_NO + '_FTC_' + FABRIC_TYPE_CD;
     const cacheData = await this.ctx.helper.cache(cacheKey);
     if (cacheData) {
-      return cacheData;
+      return cacheData.QUALITY_CODE;
     }
-    let sql = 'select * from ESCMOWNER.PPO_ITEM ';
-    sql += " where PPO_NO = '" + PPO_NO + "' and FABRIC_TYPE_CD = '" + FABRIC_TYPE_CD + "'";
+    const sql = `select * from ESCMOWNER.PPO_ITEM where PPO_NO = '${PPO_NO}' and FABRIC_TYPE_CD = '${FABRIC_TYPE_CD}'`;
     const res = await this.query('oracle', sql, 1);
-
     if (res && res.QUALITY_CODE && typeof (exp) === 'number' && exp > -1) {
       await this.ctx.helper.cache(cacheKey, res, exp);
     }
