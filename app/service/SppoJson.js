@@ -121,7 +121,7 @@ class SppoJsonService extends BaseService {
       SWATCH_REQUEST: userData.ctm.Swatch_Req,
       TEST_REPORT: '',
       CHARGE_METHOD: '',
-      WASH_DEVELOP_NO: '1', // TODO:未确定值
+      WASH_DEVELOP_NO: 'Non-Wash', //  Wash Remark 默认'Non-Wash'
       CUSTOMER_SEASON: seasonData.season.name,
       GMT_SAMPLE_TYPE_CD: '',
       PPC_STATUS: '',
@@ -155,7 +155,7 @@ class SppoJsonService extends BaseService {
     const PPO_ITEM_COMBO = [];
     const PPO_ITEM_COMBO_LABDIP = [];
     const PPO_ITEM_SIZE = [];
-    const FAB_LABDIP_LIB = [];
+    // const FAB_LABDIP_LIB = [];
     const PPO_ITEM_LOT_HD = [];
     const PPO_ITEM_LOT_DT = [];
     // ...
@@ -193,10 +193,8 @@ class SppoJsonService extends BaseService {
       const item = itemList[0];
       const FABRIC_TYPE_CD = item.garment_part;
       const COMPONENT_PART = this.formatGarmentComponent(item.garment_component);
-      console.log(COMPONENT_PART);
       const getMasterLnRes = await this.ctx.service.sppoHelper.findMstFabAndCcByCfcAndGP(item.customer_fab_code, item.garment_part);
       errorRowData = { style_no: CUSTOMER_STYLE_NO, garment_part, customer_fab_code: item.customer_fab_code };
-
       if (!getMasterLnRes) {
         this.setError(992, `通过Customer_Fab_Code:${item.customer_fab_code}查找基础信息失败，请上传正确的 Customer_Fab_Code，或在Master Center添加对应的基础数据`, errorRowData);
         hasError = true;
@@ -226,6 +224,7 @@ class SppoJsonService extends BaseService {
       // const colorArray = item.color_name.split('/');
       // const colorCodeArray = item.color_code.split('/');
       const finishingArray = masterLnData.Finishing.split(',');
+      // console.log(masterLnData);
 
       // console.log(qcMainInfo);continue;
       const PPO_ITEM_ID = PPO_ITEM.length + 1;
@@ -239,7 +238,7 @@ class SppoJsonService extends BaseService {
         QUALITY_CODE, // XXX,
         FABRIC_WIDTH: helper.setDefault('Fab_Width', '', masterLnData),
         DESCRIPTION: helper.setDefault('Fab_Desc', '', masterLnData),
-        REMARKS: helper.setDefault('Fab_Remark', '', masterLnData),
+        REMARKS: helper.setDefault('Fab_Remark', item.customer_fab_code, masterLnData),
         STATUS: 'N', // XXX: ???
         COMPONENT_PART,
         PRINT_FLAG: item.print,
@@ -317,7 +316,6 @@ class SppoJsonService extends BaseService {
             hasError = true;
             break;
           }
-          console.log()
 
           const fabLabdipLibData = await this.service.fabLabdipLib.findById(fabComboLabdipData.LABDIP_LIBRARY_ID);
           if (!fabLabdipLibData) {
@@ -582,8 +580,6 @@ class SppoJsonService extends BaseService {
         }
 
         /** PPO_QCCONSTRUCTIONDTL */
-        console.log('constructionData');
-        console.log(constructionData);
         if (constructionData) {
           const itemQcConstructionDtl = {
             FULLY_COPY: 'Y',
@@ -621,10 +617,10 @@ class SppoJsonService extends BaseService {
               FABRIC_TYPE_CD,
               QUALITY_CODE,
               YARN_TYPE: yarnItem.Yarn_Type_Code,
-              YARN_TYPE_DESC: yarnItem.Yarn_Type,
+              YARN_TYPE_DESC: yarnItem.Yarn_Type_desc ? yarnItem.Yarn_Type_desc : '',
               YARN_COUNT: yarnItem.Yarn_Count,
-              YARN_RATIO: yarnItem.Yarn_Ratio,
-              THREADS: yarnItem.Yarn_Strands, // XXX:THREADS ????
+              YARN_RATIO: yarnItem.Yarn_Ratio, // TODO: 比例，要截取,
+              THREADS: yarnItem.Yarn_Strands ? yarnItem.Yarn_Strands : 1, // XXX:THREADS ????
               WARP_WEFT: '', // XXX: ????
               YARN_DENSITY: '0', // XXX: ????
               STATUS: 'N', // XXX: ????
