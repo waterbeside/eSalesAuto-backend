@@ -131,6 +131,8 @@ class SppoController extends BaseController {
         errorMsg = errorRes.errorMsg;
         break;
       }
+      // return ctx.jsonReturn(992, { sppoJson_sn_kv, res, errorData }, errorMsg);
+
       // console.log(sppoJson_sn_kv[style_no]);
       let itemRes = false;
       try {
@@ -138,6 +140,7 @@ class SppoController extends BaseController {
         console.log('itemRes');
         console.log(itemRes);
       } catch (err) {
+        hasError = true;
         console.log('err');
         itemRes = err.response.data;
       }
