@@ -62,6 +62,7 @@ module.exports = app => {
       where: {
         Customer_Fab_Code,
       },
+      raw: true,
     });
     if (res && typeof (exp) === 'number' && exp > -1) {
       await helper.cache({ app }).run(cacheKey, res, exp);

@@ -75,6 +75,7 @@ module.exports = app => {
       order: [
         [ 'Customer_Code', 'ASC' ],
       ],
+      raw: true,
     });
     if (res && typeof (exp) === 'number' && exp > -1) {
       await helper.cache({ app }).run(cacheKey, res, exp);

@@ -45,6 +45,7 @@ module.exports = app => {
         Customer_Code,
         Lab_Dip_Color_Name: Color_Name,
       },
+      raw: true,
     });
     if (res && typeof (exp) === 'number' && exp > -1) {
       await helper.cache({ app }).run(cacheKey, res, exp);
